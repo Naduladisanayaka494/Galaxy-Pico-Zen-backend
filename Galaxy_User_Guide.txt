@@ -1,0 +1,1530 @@
+
+
+Galaxy — User & Instruction Guide     1
+GALAXY
+Stock Management System
+User & Instruction Guide
+For Software Engineers & System Administrators
+Version 1.1  ·  June 2026
+Developed by KNOX Digital Agency  ·  knoxlive.com
+
+Galaxy — User & Instruction Guide     2
+1.  What is Galaxy?
+Galaxy is a complete stock and order management system designed for retail businesses in Sri 
+Lanka. It runs entirely inside a single web page — no internet connection, no installation, and no 
+server required. Open the file in any modern browser and the system is ready to use.
+Galaxy is built to be simple enough for non-technical business owners while being powerful 
+enough to manage inventory, orders, staff, and financial reporting in one place.
+What Galaxy can do
+›  Manage product inventory across multiple warehouses
+›  Record and track customer orders from placement to delivery
+›  Generate sales, stock, customer, staff, and finance reports
+›  Control what each staff member can see and do based on their role
+›  Display client branding — logo, business name, and category — throughout the system
+›  Show announcement banners and image slides for internal communications
+System at a glance
+ItemDetail
+File typeSingle HTML file — open in any browser
+Pages
+12 pages: Login, Dashboard, Item Stock, Add Product, Warehouses, 
+Manage Orders, Place Order, Reports, Users, General Settings, Billing, 
+Help
+FontPlus Jakarta Sans — weights 400 to 900
+Session
+Login session stays active while the browser tab is open. Resets 
+when the tab is closed.
+
+Galaxy — User & Instruction Guide     3
+2.  Login Page
+When the file is opened, the login screen appears first. It has two layers — an animated 
+background and a centred login box.
+▲  Galaxy Login Screen — showing Forgot password? link below Sign In button
+Background — Animated Star Field
+The background is a full-screen animated canvas that simulates deep space. It runs 
+automatically when the page loads and has three layers:
+›  Static stars — 280 small white and blue-tinted dots of varying sizes. Each star gently pulses 
+(twinkles) and drifts slowly across the screen.
+›  Drifting star clusters — groups of stars that move together, giving a sense of depth and 
+parallax.
+›  Shooting stars — bright streaks that enter from the left or right edge at random intervals, 
+travel diagonally, fade in and then fade out.
+Background is pure black (#000000). Stars are white with occasional blue-tinted stars (hsl 200–
+280°) for visual variety.
+Login Box
+Centred glass panel — semi-transparent frosted design that blurs the starfield behind it.
+Box appearance
+›  Shape — rounded rectangle, border-radius: 28px
+›  Background — semi-transparent white at 12% opacity: rgba(255,255,255,0.12)
+›  Blur effect — backdrop-filter: blur(60px) — creates the frosted glass look
+›  Border — 1px solid rgba(255,255,255,0.3) — soft white glow edge
+›  Size — 400px wide, padding 40px top/bottom, 44px left/right
+›  Mouse glow — a canvas layer sits over the box border. As the mouse moves near the box, a 
+glowing arc follows the cursor around the border. Decorative effect only.
+
+Galaxy — User & Instruction Guide     4
+Box contents — top to bottom
+›  ① Galaxy logo — 88×88px rounded image, centred, border-radius: 22px
+›  ② Title "Galaxy" — 40px, weight 700, white, letter-spacing: -2px
+›  ③ Subtitle "Powered by KNOX" — below the title in small grey text
+›  ④ Username field — text input with label "USERNAME", placeholder "Enter username"
+›  ⑤ Password field — password input with label "PASSWORD", placeholder "Enter password"
+›  ⑥ Sign In button — full-width, orange-red gradient (see button details below)
+›  ⑦ Forgot password? — text link below the Sign In button (see §2.1)
+Input field style
+›  Background — dark semi-transparent: rgba(255,255,255,0.08)
+›  Border — 1px solid rgba(255,255,255,0.15), turns orange-red on focus
+›  Text colour — white · Placeholder — white at 35% opacity
+›  Border-radius: 12px · Padding: 12px 14px · Font: Plus Jakarta Sans 14px
+Sign In button
+›  Background — gradient: linear-gradient(160deg, #FF5A30 → #FF3F1F → #CC2200)
+›  Border — 1px solid rgba(255,120,80,0.4)
+›  Text — white, weight 600, letter-spacing 0.02em · Border-radius: 12px
+›  Width — 100% of box · Inner glow — subtle white highlight on top edge
+›  Behaviour — clicking or pressing Enter triggers the login check
+Error message
+›  Text — "Wrong username or password."
+›  Background — rgba(220,60,50,0.25) · Border — rgba(255,120,100,0.3)
+›  Text colour — #FFB4AA · Border-radius: 12px · Hidden by default
+Colour summary — Login page
+■  Background — #000000  Pure black — deep space canvas
+■  Stars — #FFFFFF  White at 20–100% opacity — star points
+■  Box — #FFFFFF  White at 12% opacity — glass panel
+■  Button start — #FF5A30  Orange-red gradient start
+■  Button end — #CC2200  Deep red gradient end
+■  Error text — #FFB4AA  Soft red — wrong credentials message
+2.1  Forgot Password
+The "Forgot password?" link appears below the Sign In button. Clicking it opens a dark glass 
+modal panel over the login screen.
+
+Galaxy — User & Instruction Guide     5
+▲  Step 1 — Enter email▲  Step 2 — Email sent confirmation
+Step 1 — Reset Password modal
+›  Title — "Reset Password" in 22px, weight 800, white
+›  Description — instructions in small grey text
+›  Email Address label — 10px, uppercase, grey
+›  Email input — same dark glass style as login inputs, orange border on focus
+›  "Send Reset Link" button — full-width, orange-red gradient matching Sign In
+›  "Cancel" button — ghost style, subtle border, closes the modal
+›  Backdrop click — clicking outside the panel also closes the modal
+Validation
+›  Empty field — shows inline error: "Please enter your email address."
+›  Invalid format — shows inline error: "Please enter a valid email address."
+›  Error appears in a red-tinted box above the email input
+Step 2 — Email Sent confirmation
+›  Green circle with envelope icon — confirms success
+›  "Email Sent!" heading in 22px white
+›  The entered email address shown in orange (#FF5A30)
+›  Message — "Check your inbox and click the link to reset your password. The link expires in 
+30 minutes. Check spam if you don't see it."
+›  "Back to Login" button — orange-red gradient, closes modal and returns to login
+Modal style
+›  Background — rgba(15,15,30,0.97) — very dark navy, near opaque
+›  Border — 1px solid rgba(255,255,255,0.15) — subtle white border
+›  Border-radius — 22px · Width — 380px max-width 92vw
+›  Backdrop — rgba(0,0,0,0.75) with backdrop-filter: blur(8px)
+›  Z-index — 99999 — always renders above everything including login screen
+Note  In the current version, Galaxy is a single-file system with no backend server. The "Send Reset Link" 
+button confirms visually but does not send an actual email. Backend email integration is required for real 
+password reset functionality.
+
+Galaxy — User & Instruction Guide     6
+
+Galaxy — User & Instruction Guide     7
+3.  System Layout
+After logging in, the main application shell appears. The layout is consistent across all pages 
+with three main areas.
+Sidebar — left panel (222px wide)
+›  Client block at top — logo image (36×36px, border-radius:10px), business name and 
+category
+›  Navigation links grouped into: Main, Inventory, Operations, Analytics, Settings
+›  Active page highlighted with semi-transparent white background
+›  Bottom footer — Galaxy logo, "Galaxy", "Retail Management", and Powered by KNOX
+Topbar — 54px height
+›  Page name — current page shown on the left
+›  Live clock — date and time, updates every second
+›  Alert bell — shows stock and order alerts count
+›  User avatar and name — click for options
+Content area
+›  Background colour — light grey: #F2F2F7
+›  Scrollable — each page renders its content in white cards
+›  Padding — 22px top/bottom, 26px left/right
+
+Galaxy — User & Instruction Guide     8
+4.  Dashboard
+The first page after login. Shows a business performance overview for the selected time period.
+▲  Galaxy Dashboard
+Period filter
+›  Today — figures for today only
+›  Yesterday — figures for yesterday
+›  This month — current calendar month (default)
+Note  The Revenue trend chart always shows the last 30 days regardless of the period selected.
+Summary cards (4 cards)
+›  Revenue — total income from delivered orders, with % change vs last month
+›  Profit — revenue minus purchase cost, with profit margin %
+›  Cancelled — number of cancelled orders with % of total
+›  Returned — number of returned orders with % of total
+Charts
+›  Revenue trend — full-width line chart, last 30 days. Revenue in orange (#FF5A30), Profit in 
+green (#16A34A)
+Row 1 — Orders & Top Products (side by side)
+›  Left — Orders donut chart (Orders — This Month): shows order breakdown by status for the 
+selected period. Count legend displayed as a grid below the donut.
+›  Right — Top Products table (Top Products — This Month): best-selling products by quantity 
+for the selected period, with revenue per product. Max-height 240px with scroll.
+›  Layout — two equal columns (1fr 1fr), gap 14px
+
+Galaxy — User & Instruction Guide     9
+Row 2 — Recent Orders & Stock Alerts (side by side)
+›  Left — Recent Orders table: last 6 orders across all statuses — order code, customer name, 
+amount, and status badge.
+›  Right — Stock Alerts: products at or below the low-stock threshold. Out-of-stock shown in red 
+(#E8220E), low stock in amber (#D97706).
+›  Layout — two equal columns (1fr 1fr), gap 14px
+Announcement slider
+›  Image panel on the right — portrait 4:5 ratio (1080×1350px recommended)
+›  Auto-advances every 4 seconds with smooth slide transition
+›  Arrow buttons and dot indicators for manual navigation
+
+Galaxy — User & Instruction Guide     10
+5.  Item Stock
+Shows every product in the system as a table, with stock levels, pricing, and profit. This is the 
+main inventory view used day to day.
+▲  Item Stock Page — full table view
+Toolbar
+›  Add Product button — top left, navigates to the Add Product page
+›  Search bar — filter by product name or code in real time
+›  Stock History button — top right, opens a slide-in panel showing every stock event across all 
+products (see §5.5)
+›  Delete icon — top right, becomes active once at least one product is checked using the row 
+checkboxes
+Table columns (14 total)
+#ColumnDescription
+1CheckboxSelect one or more rows to enable the Delete button
+2OFF/ON
+Toggle switch — turns the product visible or hidden in Place Order 
+without deleting it
+3ImageProduct thumbnail photo
+4
+Product 
+Name
+Sortable. Hovering a row reveals the action buttons below the name 
+(see §5.3)
+5Product CodeSortable. The unique product code/SKU
+6
+Available 
+Quantity
+Sortable. Total stock remaining across all warehouses combined. 
+Shown in orange when low.
+7
+Sales 
+Quantity
+Sortable. Total units sold to date
+8Sales PriceSortable. The price charged to customers (LKR)
+9
+Purchase 
+Price
+The cost price paid to acquire the product (LKR)
+10
+Profit (Each 
+One)
+Sortable. Sales Price minus Purchase Price, shown in green
+
+Galaxy — User & Instruction Guide     11
+11Warehouse
+Stock breakdown per warehouse shown inline, e.g. "Main:25 · Galle:15 
+· Kandy:2"
+12
+Stock Value 
+(Purchase 
+Price)
+Available Quantity × Purchase Price — the total cost value of 
+remaining stock
+13
+Stock Value 
+(Sales Price)
+Available Quantity × Sales Price — the total potential revenue if all 
+remaining stock sells
+14Add DateThe date the product was first added to the system
+Note  There is no separate warehouse filter dropdown above the table. Instead, stock per warehouse is 
+shown directly inside the Warehouse column for every product, so all locations are visible at once without 
+needing to filter.
+Stock level colour coding
+■  Black — #18182B  Normal — healthy stock level (Available Quantity column)
+■  Amber — #D97706  Low stock — quantity shown in amber/orange when at or below the 
+low-stock threshold
+5.3  Row actions (hover menu)
+Hovering over any product row reveals four action buttons directly beneath the product name: 
+View product, Edit product, Chart, and Refill stock.
+① View product
+Opens a read-only popup with the full product summary.
+
+Galaxy — User & Instruction Guide     12
+▲  View Product popup
+›  Product image — large preview at the top
+›  Product Code and Status (Active/Inactive)
+›  Selling Price and Purchase Price
+›  Profit Each and Total Stock — combined across all warehouses
+›  Warehouse Stock breakdown — units in each warehouse listed individually
+›  Stock Value (Purchase) and Stock Value (Selling) — calculated totals
+›  Added date and total units Sold to date — shown at the bottom
+② Edit product
+Opens the same form used for adding a product (see §6), pre-filled with this product's current 
+details, so existing information can be changed and saved.
+
+Galaxy — User & Instruction Guide     13
+▲  Edit Product — pre-filled Add Product form
+›  Product Images — existing image shown, new images can be added (up to 5)
+›  Product Information — name, description, product code (with Regenerate option)
+›  Pricing — purchase price and selling price
+›  Product status — Off/On toggle to activate or deactivate the product
+›  Warehouse Quantities — current stock per warehouse, editable
+›  Selling Details — auto-calculated, read-only: profit, stock value, total quantity
+›  Submit — saves all changes
+③ Chart
+Opens a popup showing this product's sales trend for the last 7 days, with a quick link through 
+to the full Reports page.
+
+Galaxy — User & Instruction Guide     14
+▲  Chart popup — Sales Trend Last 7 Days
+Popup layout — top to bottom
+›  Header row — small product thumbnail (40×40px) on the left, product name and product 
+code stacked beside it, and a close (×) button on the far right
+›  Section label — "SALES TREND — LAST 7 DAYS" in small bold red uppercase text
+›  Summary line — grey text showing the total number of units sold across the 7-day window, 
+e.g. "14 units sold in last 7 days"
+›  Chart area — a fixed-height canvas (220px tall) containing the bar chart
+›  "View more insight" button — full-width orange-red gradient button with a right-pointing 
+arrow icon, placed at the very bottom
+Chart type and axes
+›  Chart type — vertical bar chart
+›  X axis (horizontal) — the last 7 calendar days, shown as DD.MM date labels, ordered oldest 
+(left) to newest/today (right)
+›  Y axis (vertical) — Sales Quantity, i.e. the number of units of this product sold on that day
+›  Bar colour — solid orange (#FF5A30), rounded corners, single dataset labelled "Units sold"
+›  Hovering a bar shows a tooltip with the exact unit count for that day
+How the data is calculated
+›  Scans every order dated within the last 7 days
+›  Orders with status Cancelled or Refunded are excluded from the count
+
+Galaxy — User & Instruction Guide     15
+›  Matches order line items to this product by product code, then sums the quantities
+›  The 7 daily totals are also summed for the "units sold in last 7 days" summary line
+Buttons in this popup
+›  × (close) — top right corner, closes the popup and returns to the Item Stock table
+›  View more insight — closes the popup, navigates to the Reports page, and automatically 
+opens the Orders tab for deeper sales analysis
+④ Refill stock
+Opens the Add Stock popup — the main way to add new inventory to an existing product.
+▲  Refill Stock popup
+›  Product summary — name, SKU, and current total stock shown at the top
+›  Current Purchase Price and Current Selling Price — shown for reference
+›  Add to warehouse — dropdown to choose which warehouse receives the new stock, with 
+each warehouse's current quantity shown
+›  Quantity to add — number stepper with − and + buttons
+›  Purchase price and Selling price — each has a "Same" toggle to keep existing prices, or 
+enter new prices for this batch
+›  Add Stock — confirms and adds the entered quantity to the selected warehouse. The event 
+is logged in Stock History as a "REFILL" entry.
+
+Galaxy — User & Instruction Guide     16
+5.5  Stock History panel
+Clicking the "Stock History" button in the toolbar opens a slide-in panel on the right showing a 
+timeline of every stock movement across all products.
+▲  Stock History panel
+Each history entry shows
+›  Event type badge — INITIAL STOCK, REFILL, or TRANSFER, colour-coded
+›  Product name and product code
+›  Date and time of the event
+›  Quantity change — shown with + for additions and − for transfers out
+›  Warehouse — which location the stock was added to or moved from
+›  Purchase price and Selling price at the time of the event
+5.6  Delete
+To delete one or more products: tick the checkbox next to each product to remove, then click 
+the delete (trash) icon at the top right of the toolbar. A confirmation prompt appears before the 
+product is permanently removed.
+Note  Delete permanently removes the product and its stock records. This action is restricted to Owner 
+and Manager roles.
+
+Galaxy — User & Instruction Guide     17
+
+Galaxy — User & Instruction Guide     18
+6.  Add Product
+Use this page to add new products to the inventory. The page is split into a left column for 
+product details and a right column for stock and status.
+▲  Add Product Page
+Required fields
+›  Product name — must not be empty
+›  Purchase price — must be greater than 0
+›  Selling price — must be greater than 0
+›  Total quantity — at least one warehouse must have a quantity greater than 0. If every 
+warehouse is left at 0, the system blocks submission with "Total quantity is 0 — please add 
+stock to at least one warehouse."
+Optional fields
+›  Product description — short notes about the product
+›  Low stock alert threshold — defaults to 5 units if left blank
+6.1  Product Images
+A maximum of 5 images can be added per product.
+
+Galaxy — User & Instruction Guide     19
+▲  Product Images uploader
+›  The first image in the row is always the main/default image and is marked with a red 
+"DEFAULT" badge
+›  Click the dashed + tile to open the file picker and add a new image
+›  Images can be reordered by clicking and dragging a thumbnail to a new position — dragging 
+any image into the first position makes it the new default/main image
+›  Hovering an image reveals a small delete (✕) icon in its corner to remove that image
+›  A counter below the images shows progress, e.g. "0 / 5 images". Once 5 images are added, 
+the + tile disappears and the counter turns red.
+6.2  Product Code
+›  The code is auto-generated as soon as a Product Name is typed — built from the first 3 
+letters of the name plus a random 4-digit number, e.g. "Sunscreen SPF50" → "SUN4821"
+›  The code field remains fully editable — typing in it manually overrides the auto-generated 
+value
+›  Once edited manually, the code will no longer auto-update if the product name is changed 
+afterward
+›  "↻ Regenerate" button — generates a brand new random code from the current product 
+name at any time, overriding any manual edit
+›  Helper text below the field: "Auto-generated from name. You can edit manually."
+6.3  Pricing
+›  Purchase price (LKR) — the cost price, required
+›  Selling price (LKR) — the price charged to customers, required
+6.4  Product status — On/Off toggle
+Located at the top of the right column. Controls whether the product is active and available for 
+sale.
+›  On (default, shown in red/orange when active) — the product is active and will appear when 
+placing orders
+›  Off (shown in grey when inactive) — the product is hidden from Place Order but still exists in 
+Item Stock for record-keeping
+›  Helper text: "Active product will appear in sales"
+6.5  Warehouse Quantities
+One number field per warehouse, each labelled with the warehouse name and its location in 
+smaller grey text (e.g. "Main Store — Colombo 03"). Defaults to 0. Minimum value is 0 — 
+negative numbers cannot be entered.
+6.6  Selling Details (auto-calculated)
+A read-only summary box that updates instantly as prices and quantities are entered:
+›  Profit (Each one) — Selling price minus Purchase price
+›  Stock value (Purchase) — Total quantity × Purchase price
+›  Stock value (Selling) — Total quantity × Selling price
+›  Total quantity — sum of all warehouse quantities combined
+
+Galaxy — User & Instruction Guide     20
+6.7  Buttons
+ButtonAction
+↻ Regenerate
+Generates a new random product code based on the current product 
+name, replacing whatever is in the Product Code field
+Submit
+Validates all required fields. If validation fails, shows the red error box 
+and stops. If validation passes, adds the product to Item Stock, shows a 
+success toast, and clears the form for the next entry.
+6.8  Error and warning notes
+Two colour-coded note boxes can appear above the Submit button, depending on what is 
+entered in the form.
+Red note — blocking errors
+▲  Red error note box
+›  Border — dashed red (#E8220E)
+›  Background — light red/pink (#FFF8F6)
+›  Title — "CANCEL ADD PRODUCT — FIX THESE FIRST" in bold red uppercase, with a warning 
+circle icon
+›  Lists every missing or invalid required field as a bullet point, e.g. "Product name is 
+required.", "Purchase price is required — please add the purchasing price.", "Selling price is 
+required.", "Total quantity is 0 — please add stock to at least one warehouse."
+›  While this red note is showing, the product cannot be submitted — clicking Submit re-checks 
+and re-displays the same errors
+
+Galaxy — User & Instruction Guide     21
+Yellow note — non-blocking warning
+▲  Yellow warning note example
+›  Border — dashed amber/orange (#D08020)
+›  Background — light yellow (#FFFCF0)
+›  Title — "WARNING — YOU CAN STILL SUBMIT" in bold amber uppercase, with a triangle 
+warning icon
+›  Appears when Selling price is lower than Purchase price: "Selling price is lower than 
+purchase — this product will run at a loss."
+›  Also appears when Selling price equals Purchase price: "Selling price equals purchase price 
+— profit will be zero."
+›  This is a caution only — the product can still be submitted and saved despite this warning
+Note  Both note boxes update live as the form is filled in, and automatically hide once their condition is 
+resolved.
+
+Galaxy — User & Instruction Guide     22
+7.  Warehouses
+Manage multiple storage locations, see stock per location, and move stock between 
+warehouses.
+▲  Warehouses Page — main view
+7.1  Top summary cards
+Four cards across the top give a network-wide snapshot before drilling into any single 
+warehouse:
+CardShows
+Total on-hand
+The combined stock quantity across every warehouse, with a small note 
+"Across all locations"
+Active warehouses
+The number of warehouses currently marked active (visible in transfers 
+and orders), with "Across network"
+Low stock alerts
+Count of products that are at or below their low-stock threshold 
+(combined across all warehouses), with "Need attention"
+In-transit transfers
+Count of stock transfers currently in progress. Clicking this card opens the 
+transfers panel. Shows "View all →".
+7.2  Transfer stock button
+Located top-right of the page, next to Add warehouse. Opens a popup to move stock from one 
+warehouse to another.
+
+Galaxy — User & Instruction Guide     23
+▲  Transfer stock popup
+Popup fields
+›  From — dropdown to choose the source warehouse
+›  ⇄ swap icon — click to instantly swap the From and To warehouses
+›  To — dropdown to choose the destination warehouse
+›  Products — a list of items being transferred, empty by default with the message "No 
+products added yet — use the Add New Item button below."
+›  Product search/select field — search and pick a product by code and name (e.g. "GB350 — 
+Samsung USB Charger")
+›  "+ Add New Item" button — adds the selected product to the transfer list with a quantity 
+field
+›  Cancel — closes the popup without making any change
+›  "⇄ Confirm transfer" — moves the entered quantities from the source warehouse to the 
+destination warehouse instantly; stock levels update immediately on both warehouses
+Note  Transfer stock can also be opened pre-filled for one specific warehouse — either by clicking the 
+Transfer button on a warehouse detail page, or the small Transfer icon next to any individual product row 
+inside a warehouse's product table.
+7.3  Add warehouse button
+Located top-right of the page. Opens a popup to create a new storage location.
+
+Galaxy — User & Instruction Guide     24
+▲  Add warehouse popup
+Popup fields
+›  Warehouse status — On/Off toggle. On (default) means the warehouse appears as an option 
+in transfers and orders. Off hides it from those choices.
+›  Warehouse name — e.g. "North DC"
+›  Code — a short identifier, e.g. "NOR"
+›  Location — free text, e.g. "City, State"
+›  Type — e.g. Distribution, Retail, Storage
+›  Capacity (units) — the maximum stock capacity used to calculate the fill percentage shown 
+on warehouse cards
+›  Cancel — closes the popup without creating anything
+›  "✓ Create warehouse" — saves the new warehouse, which then appears as a card on the 
+main page and as a new stock field option on Add Product and Edit Product
+7.4  Warehouse card (grid view)
+Each warehouse appears as a card below the 4 summary cards. Clicking anywhere on a card 
+opens that warehouse's detail view.
+What each card shows
+›  Coloured initials badge (e.g. "MS" for Main Store) on a dark square
+›  Warehouse name and location, e.g. "Main Store — Colombo 03"
+›  Units — total stock quantity currently held in that warehouse
+›  SKUs — number of distinct products stocked there
+›  Low — number of products at or below the low-stock threshold for that warehouse, shown in 
+red
+›  A thin progress bar with a percentage — shows how full the warehouse is relative to its set 
+Capacity (units total ÷ capacity)
+›  "View stock →" link — same action as clicking the card, opens the detail view
+›  An extra dashed "+ Add warehouse" card always sits at the end of the grid as a shortcut to 
+the Add warehouse popup
+
+Galaxy — User & Instruction Guide     25
+7.5  Warehouse detail view
+Opened by clicking any warehouse card or its "View stock" link. Shows every product stocked in 
+that specific warehouse.
+▲  Warehouse detail view — Main Store
+Header card
+›  "‹ All warehouses" link — returns to the main warehouse grid
+›  Coloured initials badge, warehouse name, and an ACTIVE/INACTIVE status pill
+›  Location and Manager shown in small grey text below the name
+›  On hand — total units in this warehouse
+›  low — count of low-stock products here, in red
+›  Progress bar and percentage — capacity fill level
+›  Edit button — opens the Edit warehouse popup (see §7.6)
+›  Transfer button — opens Transfer stock pre-filled with this warehouse as the source
+Toolbar
+›  Filter products... search box — filters the table below by product name or code
+›  "Low stock only" checkbox — shows only products at or below their threshold in this 
+warehouse
+›  "Name A→Z" sort button — click to toggle sorting by product name ascending/descending
+›  Item count — shows how many products match the current filter, e.g. "13 items"
+Product table columns
+ColumnDescription
+SKUProduct code, shown in red
+ProductProduct name
+CategoryProduct category if set, otherwise shows —
+
+Galaxy — User & Instruction Guide     26
+On HandQuantity physically in this warehouse
+AvailableQuantity available to sell from this warehouse
+Reorder pt.The product's low-stock threshold
+Stock val (Purchase)On Hand × Purchase price for this warehouse only
+Stock val (Sale)On Hand × Selling price for this warehouse only
+Added dateSortable — click the column header to sort by date added
+StatusColour-coded pill: green "In stock", amber "Low", or red "Out"
+(action)
+Small "Transfer" button — opens Transfer stock pre-filled with this 
+warehouse and this exact product already selected
+7.6  Edit warehouse popup
+Opened from the Edit button on a warehouse's detail page.
+▲  Edit warehouse popup
+›  Warehouse status — On/Off toggle, same as in Add warehouse
+›  Warehouse name and Code — editable
+›  Location — editable
+›  Manager — optional, name of the person responsible for this warehouse
+›  Type — editable (Distribution, Retail, Storage, etc.)
+›  Cancel — closes without saving
+›  "Save changes" — updates the warehouse with the new details
+
+Galaxy — User & Instruction Guide     27
+8.  Manage Orders
+Central hub for tracking all customer orders from start to finish.
+▲  Manage Orders — main view
+8.1  Status cards (clickable filters)
+The 7 cards across the top — Processing, Ready to Ship, Delivering, Delivered, Cancelled, 
+Returned, Refunded — are not just counters. Clicking any card filters the table below to show 
+only orders with that status.
+▲  Table filtered by clicking the Delivered card
+
+Galaxy — User & Instruction Guide     28
+›  Each card shows the status name, the live count of orders in that status, and a thin progress 
+bar showing that status's share of total orders
+›  Clicking a card highlights it with a coloured border matching the status colour, and the 
+product table instantly filters to that status only
+›  Clicking the same card again removes the filter and returns the table to showing all orders
+›  When a status filter is active, a small chip appears next to the Date range button (e.g. "✕ 
+Delivered") — click it to clear the filter the same way
+›  Three additional summary cards sit below the status cards: Total orders, Revenue 
+(delivered), and Cancelled orders — these are informational only and not clickable
+8.2  Date range button
+Located top-right of the page, above the table. Filters both the status cards and the table to a 
+specific date window.
+▲  Date range popup
+Popup contents
+›  Left panel — quick presets: Today, Yesterday, Today and yesterday, Last 7 days, Last 14 
+days, Last 28 days, Last 30 days, This week, Last week, This month, Last month, Maximum, 
+and Custom
+›  Right panel — a two-month calendar (current month and next month) for manually picking a 
+from/to date range by clicking two dates
+›  Selected range is shown below the calendar, e.g. "Selected: 18.06.2026 — 18.06.2026"
+›  Note — "Dates are shown in Colombo Time"
+›  Cancel — closes the popup without applying any change
+›  Update — applies the selected date range to the page
+Once a range is applied, the button label changes to "Change range" and a "✕ Clear" button 
+appears beside it to remove the filter and return to "All time".
+
+Galaxy — User & Instruction Guide     29
+8.3  Add Order button
+Located top-left above the table, styled as a solid orange-red button. Clicking it navigates 
+directly to the Place Order page (see §9) to create a new order from scratch.
+8.4  View Order popup
+Opened by clicking "View order" from a row's hover action menu, or by clicking an order row. 
+Shows the complete order breakdown.
+▲  Order Details popup
+Popup contents
+›  Header — order code (e.g. "ORD-001"), date and time, who added the order, and the current 
+status badge
+›  Products — every item in the order with quantity, unit price, and line total, plus the order's 
+total Profit shown in green
+›  Customer box — name, phone number, and delivery address
+›  Order Info box — Delivery method, Payment method, and Discount percentage applied
+›  Reason — shown in an orange highlight box if the order was cancelled, returned, or refunded 
+with a reason on record
+›  Totals — Items total, Purchase total (cost), and the final Total in red
+›  Footer note — "Edit are only available for Processing orders." explaining why the Edit option 
+may not be available on this order
+
+Galaxy — User & Instruction Guide     30
+8.5  Status colours
+StatusColourMeaning
+Processing#F59E0B (amber)Team is preparing the order
+Ready to Ship#3B82F6 (blue)Packed, waiting for courier
+Delivering#8B5CF6 (purple)With the delivery person
+Delivered#16A34A (green)Customer received — counted in revenue
+Cancelled#E8220E (red)Cancelled before delivery
+Returned
+#DC2626 (dark 
+red)
+Customer returned after receiving
+Refunded#9090B8 (grey)Refund issued to customer
+Each status appears as a coloured dropdown badge directly in the table's Status column. 
+Clicking the badge opens the Change Status popup.
+▲  Change status popup
+›  Select new status — dropdown listing the next valid status options, with a short description 
+below (e.g. "With delivery person")
+›  Cancel — closes without changing anything
+›  Confirm — applies the new status to the order immediately
+8.6  Table columns
+ColumnDescription
+Order / Product
+Shows the first product name in the order, with customer name and city 
+below it. Hovering reveals the row action menu (View order, etc.)
+Order codeThe unique order ID, e.g. ORD-001
+Date & TimeWhen the order was placed
+StatusColoured clickable badge — opens the Change Status popup (see §8.5)
+Purchase priceTotal cost price for all items in the order
+Sale priceTotal selling price for all items in the order
+QtyTotal quantity of items in the order
+
+Galaxy — User & Instruction Guide     31
+ProfitSale price minus Purchase price, shown in green
+Added byThe staff member who created the order
+8.7  Column sorting
+Note  Column sorting (click a column header to sort the table by that column) is not currently built into the 
+Manage Orders table. This is a planned addition — column headers will become clickable to sort by Date, 
+Status, Sale price, Qty, or Profit in either ascending or descending order.
+
+Galaxy — User & Instruction Guide     32
+9.  Place Order
+Create a new order on behalf of a customer. The page is split into a left column (Product Details, 
+Customer Details, Delivery/Payment/Discount) and a right column (Order Details and Pricing 
+Details).
+▲  Place Order — empty form
+9.1  Add New Item button
+Located at the top of the Product Details card. Clicking it reveals a search field used to find and 
+add products to the order.
+▲  Add New Item — search field revealed
+›  Click "+ Add New Item" to open the "Product Name or SKU" search box
+›  Type any part of a product's name or its SKU code to search
+
+Galaxy — User & Instruction Guide     33
+Search results
+▲  Search results dropdown while typing "Rice"
+›  Each result shows the product thumbnail, name, SKU code, current stock count, and price
+›  Click a result to add that product to the order
+Item card — once a product is added
+▲  Item card after adding a product
+›  Red ✕ button on the left — removes this item from the order entirely
+›  Product thumbnail, name, and SKU — shown at a glance
+›  Quantity stepper — minus button, a typeable number field, and a plus button to increase or 
+decrease the quantity. Typing directly into the number field also works.
+›  Unit price row — shows the product's current selling price with an "Edit" button beside it
+›  Line total — shown on the right (unit price × quantity)
+›  "+ Add New Item" — appears again below the item list so more products can be added to 
+the same order
+
+Galaxy — User & Instruction Guide     34
+Editing the unit price
+▲  Unit price in edit mode
+›  Clicking "Edit" next to Unit price turns it into an editable number field outlined in red, so a 
+custom price can be typed in for this order only
+›  A "Reset" button appears next to the field — click it to revert back to the product's normal 
+selling price
+›  The line total and the Pricing Details on the right update instantly as the price or quantity 
+changes
+Note  If a product has sibling variants sharing the same parent code (e.g. different package sizes or 
+batches), the item card instead shows a row of "Price batch" pills allowing you to switch between those 
+specific variants, instead of the Edit/Reset price option.
+9.2  Delivery method, Payment method, and Discount code
+These three fields appear in a card near the bottom of the left column. Their available options 
+are configured on the General Settings page (see §12) — they are not typed freely here, but 
+chosen from what has already been set up.
+
+Galaxy — User & Instruction Guide     35
+▲  General Settings — where these options are configured
+How to add or manage the options
+›  Go to General (left sidebar) → Business Info card
+›  Delivery methods — listed with a name and a delivery charge (LKR) next to each. Click "+ 
+Add method" to add a new one, or the red ✕ to remove one.
+›  Payment methods — shown as removable tags (e.g. Cash, Card, Bank Transfer). Type a new 
+method name in the box and click "+ Add" to add it, or click the ✕ on a tag to remove it.
+›  Discount codes — listed with a code, a % or fixed-amount type, and a value. Click "+ Add 
+code" to create a new discount code, or the red ✕ to remove one.
+›  Click "✓ Save settings" at the bottom of the General page after making changes
+Once saved, these become available as selectable options on the Place Order page:
+›  Delivery method — selecting one automatically adds its configured delivery charge to the 
+Pricing Details
+›  Payment method — a simple dropdown selection, no automatic calculation
+›  Discount code — typed into the Discount code field; if it matches a code configured in 
+General Settings, the discount is applied automatically to the Pricing Details
+9.3  Order Details and Pricing Details (right column)
+This column updates live as items are added and details are filled in on the left.
+
+Galaxy — User & Instruction Guide     36
+Order Details
+›  Order ID — automatically generated, shown in red, e.g. "#001001"
+›  Date — today's date, filled automatically
+›  Time — the current time, filled automatically
+›  Placed By — the name of the logged-in staff member creating the order
+Pricing Details
+›  Each added product is listed by name with its quantity and line total, e.g. "Samsung USB 
+Charger ×1 — LKR 850"
+›  Delivery charge — filled in automatically based on the selected Delivery method
+›  Discount — shown in green, calculated automatically if a valid discount code is entered
+›  Total — the final order amount in red, bold, at the bottom: items + delivery charge − 
+discount
+A matching Subtotal is also shown at the bottom of the left column, just above the Submit 
+button, for a quick reference while still editing the order.
+9.4  Select city
+A dropdown field in Customer Details listing Sri Lankan cities and towns to choose from, instead 
+of typing the city manually. The list currently includes 105 locations. Below it is organised by 
+Province → District → Towns, which is the clearest way to check the list for accuracy and spot 
+anything missing.
+Western Province
+›  Colombo District: Colombo, Dehiwala, Moratuwa, Sri Jayawardenepura Kotte, Kaduwela, 
+Maharagama, Nugegoda, Piliyandala, Avissawella, Hanwella
+›  Gampaha District: Negombo, Gampaha, Ja-Ela, Katunayake, Wattala, Ragama, 
+Minuwangoda, Divulapitiya, Mirigama, Nittambuwa, Veyangoda, Kiribathgoda, Kelaniya, 
+Peliyagoda, Kadawatha, Biyagama
+›  Kalutara District: Kalutara, Panadura, Horana, Matugama, Bandaragama, Ingiriya, 
+Agalawatta, Aluthgama, Bentota, Beruwala, Paiyagala, Wadduwa
+Central Province
+›  Kandy District: Kandy
+›  Matale District: Matale, Dambulla, Sigiriya
+›  Nuwara Eliya District: Nuwara Eliya, Hatton
+Southern Province
+›  Galle District: Galle, Ambalangoda, Hikkaduwa, Elpitiya, Baddegama
+›  Matara District: Matara, Akuressa, Deniyaya, Dickwella, Weligama, Mirissa
+›  Hambantota District: Hambantota, Tangalle, Tissamaharama
+Northern Province
+›  Jaffna District: Jaffna, Point Pedro, Chavakachcheri
+›  Kilinochchi District: Kilinochchi
+›  Mannar District: Mannar
+›  Vavuniya District: Vavuniya
+›  Mullaitivu District: Mullaitivu
+
+Galaxy — User & Instruction Guide     37
+Eastern Province
+›  Batticaloa District: Batticaloa, Kattankudy
+›  Ampara District: Ampara, Akkaraipattu, Kalmunai
+›  Trincomalee District: Trincomalee, Muttur, Kantale
+North Western Province
+›  Kurunegala District: Kurunegala, Kuliyapitiya, Wariyapola, Nikaweratiya, Alawwa, 
+Narammala
+›  Puttalam District: Puttalam, Chilaw, Dankotuwa, Wennappuwa, Marawila, Nattandiya
+North Central Province
+›  Anuradhapura District: Anuradhapura, Tambuttegama, Medawachchiya
+›  Polonnaruwa District: Polonnaruwa, Habarana
+Uva Province
+›  Badulla District: Badulla, Bandarawela, Haputale, Ella, Welimada
+›  Monaragala District: Monaragala, Bibila
+Sabaragamuwa Province
+›  Ratnapura District: Ratnapura, Embilipitiya, Pelmadulla, Balangoda, Eheliyagoda
+›  Kegalle District: Kegalle, Mawanella, Rambukkana
+This list was cross-checked against the official Local Authorities of Sri Lanka, sourced district-by-
+district from the Election Commission's 2025 Local Authorities Election results 
+(election.adaderana.lk). All 25 districts were checked. The notable well-known towns missing 
+from each district are listed below — minor administrative sub-divisions are not included here to 
+keep this practical for everyday delivery use.
+Confirmed missing towns, by district
+›  Colombo: Boralesgamuwa, Homagama, Kesbewa, Kolonnawa, Kotikawatte (Mulleriyawa), 
+Seethawaka, Seethawakapura
+›  Gampaha: Attanagalle, Dompe, Katana, Mahara
+›  Kalutara: Bulathsinhala, Dodangoda, Madurawala, Millaniya, Palindanuwara, Walallawita
+›  Kandy: only "Kandy" itself was in the list; the district has 21 official local authority areas — 
+notable missing towns include Gampola, Nawalapitiya, Akurana, Wattegama, Kadugannawa
+›  Matale: reasonably well covered already (Matale, Dambulla, Sigiriya present)
+›  Nuwara Eliya: Talawakele-Lindula, Maskeliya, Ginigathhena, Kotagala, Walapane
+›  Galle: Karandeniya
+›  Matara: Kamburupitiya, Devinuwara, Hakmana
+›  Hambantota: Weeraketiya
+›  Jaffna: Valvettithurai
+›  Kilinochchi, Mannar, Vavuniya, Mullaitivu: small districts, main town already covered
+›  Batticaloa: Eravur
+›  Ampara: Dehiattakandiya, Pottuvil
+›  Trincomalee: Kinniya
+›  Kurunegala: Mawathagama, Polgahawela
+›  Puttalam: Kalpitiya
+
+Galaxy — User & Instruction Guide     38
+›  Anuradhapura: Mihintale
+›  Polonnaruwa: reasonably well covered already (Hingurakgoda present)
+›  Badulla: reasonably well covered already (Mahiyanganaya present)
+›  Monaragala: Kataragama, Wellawaya
+›  Ratnapura: Kahawatta, Kuruwita
+›  Kegalle: Warakapola, Ruwanwella, Deraniyagala, Aranayake
+Note  This is a documentation review only; the actual Select city dropdown in Galaxy.html has not been 
+changed, since no HTML edit was requested. If these towns should be added to the live dropdown, that can 
+be done as a separate HTML update whenever convenient.
+
+Galaxy — User & Instruction Guide     39
+10.  Reports
+Detailed analytics across five tabs — Orders, Stock, Customers, Users, and Finance. Click any 
+tab at the top of the page to switch the view. All figures update live based on the data already in 
+the system.
+10.1  Orders tab
+▲  Reports — Orders tab
+Sales chart
+›  "By Qty" / "By Revenue" toggle — switches what the chart and the cards below it measure
+›  Product search box — type a product name to filter the chart to just that product; a 
+dropdown of matches appears while typing, and a ✕ button clears the search once applied
+›  Legend checkboxes — in By Qty mode, one tickable line per order status (Processing, Ready 
+to Ship, Delivering, Delivered, Cancelled, Returned, Refunded); in By Revenue mode, three 
+tickable lines instead: Revenue, Cost, Profit. Unticking a checkbox hides that line from the 
+chart.
+›  Date range button — opens the same date range popup used elsewhere (see §8.2) to restrict 
+the chart to a specific period; a ✕ Clear option appears once a range is set
+›  Chart type — line chart
+›  X axis — dates across the selected period (or full order history if no range is set)
+›  Y axis — either unit quantity sold (By Qty mode) or LKR amount (By Revenue mode), 
+depending on the toggle
+Stat cards below the chart
+›  In By Qty mode: 7 cards, one per order status, each showing the order count, units sold, and 
+a thin progress bar showing that status's share of total orders in the selected period
+
+Galaxy — User & Instruction Guide     40
+›  In By Revenue mode: 3 cards instead — Total revenue, Total cost, and Total profit (with 
+profit margin % shown underneath)
+Cancelled & Returned trend
+›  A line chart with its own independent Date range button
+›  X axis — dates, automatically grouped by day, week, or month depending on how wide the 
+selected range is (day-level for up to 31 days, weekly up to 90 days, monthly beyond that)
+›  Y axis — number of orders
+›  Two lines: Cancelled (orange) and Returned (dark navy)
+Cancelled & Returned — reasons table
+›  Lists every order currently in Cancelled, Returned, or Refunded status
+›  Columns: Order code, Status badge, Customer name, Reason (the reason text recorded 
+when the status was changed), and Date
+›  Shows "No cancelled or returned orders" if the list is empty
+10.2  Stock tab
+▲  Reports — Stock tab
+
+Galaxy — User & Instruction Guide     41
+Top 4 cards
+›  Total products — count of all products in the system, as of today's date
+›  Stock purchase value — total cost value of all stock currently on hand (quantity × purchase 
+price, summed)
+›  Stock selling value — total potential revenue if all current stock sold at listed price
+›  Low stock items — count of products at or below their reorder threshold
+Stock value by product table
+›  Columns: Product, SKU, Qty on hand, Purchase price, Selling price, Purchase value, Selling 
+value, Potential profit — each numeric column header is sortable (small ↕ arrow icon)
+Low stock products
+›  Lists every product currently at or below its reorder point, with Product, SKU, Stock, and 
+Reorder pt. columns
+Dead stock (never sold)
+›  Lists products that have never appeared in any delivered order, with Product, SKU, Units, 
+and Cost value — useful for spotting stock that isn't moving
+Stock movement history
+›  A chronological log of every stock change: Date, Time, Type (refill or transfer, shown as a 
+small coloured tag), Product, Qty (shown with a + prefix), Purchase price, Selling price, and 
+Warehouse
+
+Galaxy — User & Instruction Guide     42
+10.3  Customers tab
+▲  Reports — Customers tab
+Top 4 cards
+›  Total customers — count of unique customers (matched by phone number)
+›  Returning customers — count of customers with more than one order, with a % of total 
+underneath
+›  Top city — the city generating the most revenue, with its revenue figure shown underneath
+›  Avg spend / customer — total revenue divided by total customers
+Orders by city
+›  A ranked table of cities by order count and revenue, with a thin bar under each city name 
+showing its relative share
+Returning customers table
+›  Customers with more than one order, sorted by order count: Customer, Phone, Email, Orders 
+(shown as e.g. "10x"), Total spent, and Last order date
+
+Galaxy — User & Instruction Guide     43
+Customer details table
+›  Full list of every customer: Customer, Phone, Email, City, Address, Orders, and Products 
+bought (a comma-separated list of every distinct product they have ordered)
+›  "  Customers CSV" button — top-right of this table, downloads the full customer list as a CSV⤓ 
+file
+10.4  Users tab
+▲  Reports — Users tab
+Top 4 cards
+›  Total employees — count of staff accounts that have placed at least one order
+›  Total orders — combined order count across all employees
+›  Total commission — combined commission payable across all employees for the selected 
+period
+›  Cancelled / Returned — combined cancelled and returned order counts, shown as e.g. "14 / 
+8"
+Orders by employee table
+›  Columns: Employee (with role badge and commission rule shown underneath, e.g. "5% of 
+rev" or "LKR 150/unit · min 5 units"), Role, Orders, Delivered, Cancelled, Returned, Revenue, 
+Profit, Commission, Items sold
+›  "Click column header to sort" — noted top-right of the table; every column listed above is 
+sortable by clicking its header
+›  A summary row at the bottom shows "Total commission payable this period" with the 
+combined total
+Note  Commission rules (percentage of revenue, or a fixed amount per unit with a minimum unit 
+threshold) are configured per staff member on the Users page, not on this Reports page — this table only 
+displays the results of those rules.
+
+Galaxy — User & Instruction Guide     44
+10.5  Finance tab
+▲  Reports — Finance tab
+Month selector
+›  A row of month buttons (Jan through the current month) — click any month to view that 
+month's finance breakdown
+Top 5 cards (for the selected month)
+›  Total revenue — product sales revenue plus any manually added revenue entries
+›  Product cost — automatically calculated from delivered orders' purchase prices
+›  Commission — automatically calculated from staff commission rules
+›  Other expenses — total of manually entered expense entries for the month
+›  Net profit — Revenue minus Product cost, Commission, and Other expenses, with the profit 
+margin % shown underneath; this card has a highlighted red border to draw attention to it
+Finance breakdown table
+›  Lists every line contributing to the month's numbers: Type (Auto or Manual, colour-tagged), 
+Description, and Amount (green for income, red for expense)
+›  Auto rows — Product revenue, Product cost, and Commission cost; these come directly from 
+order and staff data and cannot be edited or removed here
+›  Manual rows — any custom entries added via the + Add button (e.g. "Ad cost", "WiFi bill"); 
+each has a small ✕ button to remove it
+›  A Net profit total row at the bottom of the table
+
+Galaxy — User & Instruction Guide     45
+"+ Add" button — Add finance entry popup
+▲  Add finance entry popup
+›  Type — dropdown to choose Expense or Revenue
+›  Title / Description — free text, e.g. "Facebook ad cost", "WiFi bill"
+›  Amount (LKR) — the value to add
+›  Cancel — closes without adding anything
+›  "✓ Add entry" — adds the entry to the current month's finance breakdown immediately
+Monthly profit summary table
+›  A month-by-month history table: Month, Revenue, Product cost, Commission, Other exp., 
+Total cost, Net profit, and Margin % — lets you compare performance across months at a 
+glance
+10.6  Product Sales Chart popup
+Accessed from the Item Stock page by clicking the "Chart" button on any product row (see §5.3). 
+This popup gives a quick 7-day sales snapshot for a single product without leaving the Item 
+Stock page.
+
+Galaxy — User & Instruction Guide     46
+▲  Product Sales Chart popup
+Popup layout — top to bottom
+›  Header row — small product thumbnail (40×40px) on the left, product name and product 
+code stacked beside it, and a close (×) button on the far right
+›  Section label — "SALES TREND — LAST 7 DAYS" in small bold red uppercase text
+›  Summary line — grey text showing the total number of units sold across the 7-day window, 
+e.g. "14 units sold in last 7 days"
+›  Chart area — a fixed-height canvas (220px tall) containing the bar chart
+›  "View more insight" button — full-width orange-red gradient button with a right-pointing 
+arrow icon, placed at the very bottom
+Chart type and axes
+›  Chart type — vertical bar chart (Chart.js "bar" type)
+›  X axis (horizontal) — the last 7 calendar days, shown as DD.MM date labels, ordered oldest 
+(left) to newest/today (right)
+›  Y axis (vertical) — Sales Quantity, i.e. the number of units of this product sold on that day
+›  Bar colour — solid orange (#FF5A30), rounded corners, single dataset labelled "Units sold"
+›  No legend is shown since there is only one data series
+›  Hovering a bar shows a tooltip with the exact unit count for that day
+
+Galaxy — User & Instruction Guide     47
+How the data is calculated
+›  For each of the last 7 days, the system scans every order dated that day
+›  Orders with status Cancelled or Refunded are excluded from the count
+›  For each remaining order, it looks for line items matching this product's product code
+›  The quantity field of every matching line item is summed to get that day's total
+›  The 7 daily totals are also summed to produce the "units sold in last 7 days" summary line 
+above the chart
+Buttons in this popup
+ButtonAction
+× (close)
+Top right corner. Closes the popup and returns to the Item Stock table. No 
+navigation occurs.
+View more insight
+Bottom of the popup. Closes the popup, navigates to the Reports page, 
+and automatically opens the Orders tab for deeper sales analysis across 
+all products.
+Note  If a product had zero sales in the last 7 days, the chart still renders with all 7 day labels on the X 
+axis, each showing a bar at zero — it does not show an empty or blank state.
+
+Galaxy — User & Instruction Guide     48
+11.  Users
+Manage staff accounts, roles, status, and sales commission. Visible to Owner and Admin only.
+▲  Users Page
+11.1  Users table
+›  Search bar — filters the list by name, username, or role as you type
+›  Columns: Name (with a small "⌄ View" link beside it), Username, Role (coloured badge), 
+Status (On/Off toggle), and Last login
+›  Status toggle — switches an account between active and inactive directly from the table, 
+without opening any popup; an inactive user cannot log in to Galaxy but their account and 
+history are kept
+›  A summary line at the bottom of the table shows Total users, Active count, and Inactive 
+count
+11.2  Add User button and popup
+Top-left of the page. Opens a popup to create a new staff account.
+
+Galaxy — User & Instruction Guide     49
+▲  Add user popup
+Popup fields
+›  Account status — On/Off toggle, defaults to On; helper text "Active users can log in to 
+Galaxy"
+›  First name and Last name
+›  Email
+›  Username — used to log in, e.g. "saman_01"
+›  Password — set directly here for the new account
+›  Role — dropdown of all 7 roles: Owner, Admin, Manager, Sales, Stock Keeper, Delivery, 
+Accountant
+
+Galaxy — User & Instruction Guide     50
+Commission section
+▲  Commission fields expanded
+›  Commission — On/Off toggle; helper text "Enable sales commission for this user". Switching 
+it On reveals the fields below.
+›  Commission method — dropdown: "Product percentage (%)" or "Per product (fixed price)"
+›  Commission percentage (%) — shown when Product percentage is selected, e.g. enter 5 for 
+5% of revenue
+›  Minimum product cap — On/Off toggle; helper text "Commission applies only after this qty is 
+sold", letting commission only kick in once a staff member sells a minimum number of units
+›  Cancel — closes the popup without creating anything
+›  "✓ Create user" — creates the account; it then appears in the Users table immediately
+11.3  View User popup
+Opened by clicking the "⌄ View" link next to any user's name in the table.
+
+Galaxy — User & Instruction Guide     51
+▲  User details popup
+›  Shows the user's avatar/initials, name, role badge, Username, Status, and Last login
+›  "✎ Edit user" button — closes this popup and opens the same Add/Edit form pre-filled with 
+this user's details, allowing name, role, password, status, or commission to be changed
+11.4  Role permissions table
+A reference table at the bottom of the Users page showing exactly what each of the 7 roles can 
+access, feature by feature.
+›  A green checkmark means that role has access to the feature; a grey ✕ means it does not
+›  Some cells show special text instead, such as "no price" for Sales on Item Stock — meaning 
+that role can view stock but never sees purchase/selling prices
+FeatureOwnerAdminMgrSalesStockDeliv.Acct.
+Item Stock — view✓✓✓
+no 
+price
+✓✕✓
+Item Stock — edit/delete✓✓✓✕✓✕✕
+Add Product & Refill✓✓✓✕✓✕✕
+Warehouses✓✓✓✕✓✕✕
+Place Order✓✓✓✓✕✕✕
+Manage Orders — view✓✓✓✓✕✓✓
+Manage Orders — 
+edit/cancel
+✓✓✓✕✕✕✕
+Manage Orders — status 
+update
+✓✓✓✓✕✓✕
+Reports✓✓✓✕✕✕✓
+Users✓✓✕✕✕✕✕
+Settings — Business info✓✓✕✕✕✕✕
+Settings — Time & 
+Currency
+✓✓✕✕✕✕✕
+
+Galaxy — User & Instruction Guide     52
+Settings — Notifications✓✓✓✓✓✓✓
+Settings — Theme✓✓✓✓✓✓✓
+Billing✓✕✕✕✕✕✓
+Note  Every role can access Settings — Notifications and Settings — Theme, since these are personal 
+preferences rather than business-sensitive settings. Owner is the only role with full access to every feature 
+including Billing.
+
+Galaxy — User & Instruction Guide     53
+12.  General Settings
+System-wide configuration for the business, covering delivery/payment/discount options, time 
+and currency formatting, and notification preferences. Changes apply once "Save settings" is 
+clicked at the bottom of the page.
+▲  General Settings Page
+12.1  Business Info card
+Business logo
+›  A square preview tile on the left, showing the current logo or a placeholder image icon if 
+none is set
+›  "Upload" button below it — opens the file picker to choose a new logo image; updates the 
+preview immediately
+Business details
+›  Business name — appears in the sidebar header and browser tab title throughout the 
+system
+›  Address — street and city, used on documents and receipts
+›  Phone — contact number for the business
+
+Galaxy — User & Instruction Guide     54
+›  Category — a dropdown of business types, shown as smaller grey text under the business 
+name in the sidebar. The 10 available categories are: Retail, Wholesale, Food & Beverage, 
+Electronics, Clothing & Fashion, Pharmacy, Hardware & Tools, Agriculture, Automotive, and 
+Other.
+Delivery methods
+›  A list of delivery options, each with a name field and a charge (LKR) field side by side
+›  Red ✕ next to each row — removes that delivery method
+›  "+ Add method" button — adds a new blank delivery method row to fill in
+›  These are the exact options that appear in the Delivery method dropdown on Place Order 
+(see §9.2)
+Payment methods
+›  Shown as a row of removable tags (e.g. Cash, Card, Bank Transfer) rather than a list
+›  Click the ✕ on any tag to remove that payment method
+›  Type a new method name into the text box and click "+ Add" to add a new tag
+›  These populate the Payment method dropdown on Place Order
+Discount codes
+›  A list of promotional codes, each with: the code text, a type dropdown (% or a fixed LKR 
+amount), and the value
+›  Red ✕ next to each row — removes that discount code
+›  "+ Add code" button — adds a new blank discount code row
+›  Entering one of these codes in the Discount code field on Place Order automatically applies 
+the matching discount
+12.2  Time & Date card
+›  Time zone — a selectable dropdown, defaults to Asia/Colombo (GMT+5:30). The 7 available 
+time zones are: Asia/Colombo (GMT+5:30), Asia/Kolkata (GMT+5:30), Asia/Dubai 
+(GMT+4:00), Asia/Singapore (GMT+8:00), Europe/London (GMT+0:00), America/New_York 
+(GMT-5:00), and Australia/Sydney (GMT+10:00).
+›  Time format — two buttons to choose between 24-hour and 12-hour display across the 
+system
+12.3  Currency card
+›  Symbol — a selectable dropdown to choose the currency shown throughout the system; 
+defaults to LKR — Sri Lankan Rupee. The 6 available currencies are: LKR — Sri Lankan 
+Rupee, USD — US Dollar, EUR — Euro, GBP — British Pound, AUD — Australian Dollar, and 
+AED — UAE Dirham.
+12.4  Theme card
+›  Light / Dark buttons — switch the entire interface's colour scheme; the currently active 
+option is marked with a red checkmark
+12.5  Notifications card
+Located in the right column, separate from the Business Info card.
+
+Galaxy — User & Instruction Guide     55
+›  Low stock threshold (units) — the default minimum quantity that triggers a low-stock alert 
+across all products, unless a product has its own custom threshold set; helper text: "Alert 
+when stock falls to or below this number"
+›  Email alerts — On/Off toggle for receiving alerts by email
+›  New order — On/Off toggle, alert when a new order is added
+›  Order status update — On/Off toggle, alert when an order's status changes
+›  User added — On/Off toggle, alert when a new staff user is added
+›  Product added — On/Off toggle, alert when a new product is added
+Note  These toggles control what appears in the notification bell panel (see §14.6) and whether email 
+copies are sent, separate from the per-product low-stock threshold that can be set individually in Add 
+Product.
+12.6  Save settings button
+A full-width button at the bottom of the page. Click it after making any change above to apply it 
+across the system — nothing on this page saves automatically except the logo upload.
+
+Galaxy — User & Instruction Guide     56
+13.  Billing
+Shows the current Galaxy subscription plan, usage stats, and full payment history. Visible to 
+Owner and Accountant only.
+▲  Billing Page
+13.1  My Subscription — plan cards
+Three plan cards are shown side by side: Basic, Nova, and Stellar.
+PlanIncludes
+Basic — LKR 
+2,000/month
+1 warehouse, up to 500 products, up to 100 orders/month, 2 user accounts, 
+basic reporting. Advanced reports, price batch tracking, and multi-
+warehouse transfers are greyed out as not included.
+Nova — LKR 
+5,000/month
+3 warehouses, unlimited products, up to 500 orders/month, 4 user 
+accounts, full reports, price batch tracking. Unlimited warehouses and 
+priority support are greyed out as not included.
+Stellar — Custom 
+pricing
+Unlimited warehouses, unlimited products, unlimited orders, unlimited user 
+accounts, full reports + analytics, priority support, dedicated onboarding
+›  The currently active plan is marked with a blue "ACTIVE" badge next to its name, and its 
+button reads "Active plan" instead of an upgrade prompt
+
+Galaxy — User & Instruction Guide     57
+›  A plan lower than the current one shows a greyed-out "Current plan is higher" button 
+instead of an upgrade option
+›  The Stellar card has a "★ Contact KNOX" button — since it is custom-priced, upgrading 
+requires contacting KNOX directly rather than a self-service button
+13.2  Usage cards
+CardShows
+Next renewal
+The date the subscription next renews, with a countdown such as "17 
+days left"
+Your investment
+Total orders processed with Galaxy since signup, and how many months 
+the account has been active
+Orders this month
+Orders used this month out of the plan's monthly limit, shown as e.g. 
+"19 / 500" with a thin progress bar and remaining count underneath
+Outstanding
+Any unpaid balance in LKR; shows "LKR 0 — All cleared" with a green 
+checkmark when there is nothing owing
+13.3  Payment history table
+A full record of past invoices, most recent first.
+›  Columns: Invoice (e.g. INV-0041), Period (the billing month), Plan (colour-tagged badge), 
+Amount, Method (Cash or Bank transfer), Date, and Status (a green "Paid" badge)
+›  A small download icon at the end of each row downloads that individual invoice
+›  "  Download all" button — top-right of the table, downloads the complete payment history at⤓ 
+once
+Note  To change plan, request a custom Stellar quote, or get billing support, contact KNOX at 
+hello@knoxlive.com or call 075 273 1474.
+
+Galaxy — User & Instruction Guide     58
+14.  Help
+Support resources, tutorial videos, and a feedback form, split into a left column (tutorials) and a 
+right column (contact details and feedback).
+▲  Help Page
+14.1  Tutorial videos
+Seven video cards, each covering one part of the system: Getting started with Galaxy, Item 
+Stock (managing stock & products), Orders (placing & managing orders), Warehouses 
+(warehouses & stock transfers), Reports (reading your reports), Users (managing users & 
+commissions), and Settings (general settings setup).
+›  Each card shows a video thumbnail with a play icon and duration (e.g. "3:42"), a title, a one-
+line description of what it covers, and a status label
+›  All seven cards currently show "Coming soon" instead of a status, since the videos have not 
+been recorded yet — the cards are placeholders ready for when tutorial content is added
+14.2  Contact Support card
+›  Phone — 075 273 1474
+›  Email — hello@knoxlive.com
+›  Support hours — Mon – Fri · 9am – 6pm
+
+Galaxy — User & Instruction Guide     59
+14.3  Send Feedback card
+Type selector
+›  Three buttons: Complaint, Recommendation, Question — click one to mark the feedback 
+type; the selected button is highlighted red
+Message
+›  A text box to describe the issue or suggestion in free text
+Send feedback button
+›  Validates that a message has been entered; shows an error toast if the message box is 
+empty
+›  On success, the form is replaced with a confirmation message and a success toast appears
+Note  Feedback submitted here is intended to be emailed to KNOX (hello@knoxlive.com) for review, but in 
+the current build it only shows a local confirmation — the message is not yet actually sent anywhere. For 
+real support requests, use the Phone or Email contact details instead until this is wired up.
+14.4  Profile page
+Opened by clicking the profile name/avatar in the top-right corner of any page, then choosing 
+"Profile" from the dropdown menu (see §14.6).
+
+Galaxy — User & Instruction Guide     60
+▲  View Profile page
+Header
+›  By default, shows a large coloured circle with the user's initials (e.g. "AO" for Admin Owner), 
+their full name, and their role underneath
+›  "Change photo" button — opens the file picker to choose a real photo from the device; once 
+selected, the coloured initials circle is replaced everywhere with the actual uploaded image, 
+including the small avatar badge in the top-right corner of every page
+›  A success toast confirms once the photo has been updated
+User Details card
+›  Business name — editable
+›  Username — shown greyed out / read-only, cannot be changed here
+›  First name and Last name — editable
+›  Email — editable
+›  User role — shown greyed out / read-only; roles are changed from the Users page instead, 
+not here
+›  Phone number (Optional) — editable
+›  "Save changes" button — saves any edits made to the fields above
+Request a Leave card
+›  From and To — date pickers for the leave period
+›  Reason — free text box explaining the leave request
+›  Submit button — validates that dates and a reason are filled in, then shows a success toast 
+confirming the request was submitted
+Note  This is a Coming Soon feature. Submitting a leave request currently only shows a confirmation 
+message — there is no manager approval workflow, leave balance tracking, or notification sent to anyone 
+yet. Full leave management functionality is planned for a future update.
+Password Reset card
+›  Shows the account's email address
+›  "   Send reset link" button — sends a password reset email to that address, using the same 
+Forgot Password email flow shown at login (see §2.2)
+User Details card (right column)
+›  Role — the account's current role (e.g. Owner)
+›  User ID — a unique system identifier, e.g. #U0001
+›  User features — a short summary of what this role can access, e.g. "All features — full 
+access" for Owner
+14.5  Profile dropdown menu
+Clicking the name/avatar badge in the top-right corner of any page (next to the notification bell) 
+opens a small dropdown.
+
+Galaxy — User & Instruction Guide     61
+▲  Profile dropdown menu
+›  Profile — navigates to the View Profile page described above
+›  Sign out — logs out of the account and returns to the Login page
+14.6  Notification panel
+Clicking the bell icon in the top bar (next to the date/time) opens the Alerts panel, showing 
+recent system notifications.
+▲  Alerts notification panel
+›  A red badge with a number sits on the bell icon showing the count of unread alerts
+›  Opening the panel automatically marks every alert as read and clears the badge
+›  "Clear all" link — top-right of the panel, removes every alert from the list
+Alert types
+AlertExample
+Low Stock Warning
+"Earphones (Generic) — only 4 units left" — triggers when a product 
+drops to or below its low-stock threshold
+Stock Transfer Complete
+"10 × Samsung USB Charger: Main Store → Galle Branch" — confirms a 
+warehouse-to-warehouse transfer finished
+
+Galaxy — User & Instruction Guide     62
+Order Delivered
+"ORD-001 has been delivered successfully" — triggers when an order's 
+status changes to Delivered
+New Order Placed
+"ORD-001 · Saman Perera · LKR 1,700" — triggers whenever a new 
+order is created
+›  Each alert shows an icon matching its type, a bold title, a description line, and a timestamp 
+(time and date)
+›  Clicking an alert (the › arrow on the right) can navigate to the related page, e.g. an order 
+alert opens that order
+Note  Which of these alert types are generated is controlled by the toggles on the General Settings page 
+(see §12.5) — turning a toggle off there stops that type of alert from appearing here.
+
+Galaxy — User & Instruction Guide     63
+15.  Setting Up for a New Client
+Steps to configure Galaxy before handing over to a client.
+Step 1 — Business information
+›  Go to Settings → General Settings
+›  Enter business name, category, address, and phone
+›  Upload the client logo
+›  Click Save
+Step 2 — Delivery and payment methods
+›  Update delivery methods with the courier services the client uses
+›  Update payment methods to match accepted payment types
+›  Click Save
+Step 3 — User accounts
+›  Go to Settings → Users
+›  Update names, usernames, and passwords with real staff details
+›  Assign correct role to each person
+›  Set commission for sales staff if applicable
+Step 4 — Warehouses
+›  Go to Inventory → Warehouses
+›  Rename or add warehouses to match real storage locations
+Step 5 — Products
+›  Go to Inventory → Add Product
+›  Add real products with correct prices and stock quantities
+Step 6 — Announcement images
+›  Replace sample images with the client's own banners
+›  Recommended size: 1080 × 1350px portrait format
+Step 7 — Hand over
+›  Share the configured Galaxy.html file
+›  Provide login credentials
+›  Walk through Dashboard, Manage Orders, and Reports
+Note  Galaxy stores all data in the browser session. Data resets when the browser tab is closed. Contact 
+KNOX for the server-connected version with permanent data storage.
+
+Galaxy — User & Instruction Guide     64
+16.  KNOX Client Manager (separate tool)
+Note  This is a completely separate single-file HTML tool, used by KNOX internally to track its own agency 
+clients and their billing. It is not part of the Galaxy retail system documented in the rest of this guide, and 
+customers never see or use it. File: KNOX_ClientManager.html.
+16.1  Login page
+▲  Client Manager login page
+Visually matches Galaxy's login screen (same dark starfield background, glass card, Rubik font, 
+and red-orange gradient button) so it feels consistent with the tool already used daily.
+›  Demo credentials: admin / knox123
+
+Galaxy — User & Instruction Guide     65
+16.2  Dashboard layout
+▲  Client Manager dashboard
+Top stat cards
+›  Total clients — count of all clients ever added
+›  Active — clients currently paying and in good standing
+›  On trial — clients within their 7-day free trial window
+›  Blocked — clients with no payment recorded, access withdrawn
+›  Collected this month — total Rs. received in the current calendar month
+›  Outstanding — total Rs. owed across all clients, from unpaid setup-fee installments and 
+unpaid subscription periods combined
+Income & Profit chart
+›  Revenue / Profit / Outstanding toggle — switches what the bar chart displays, last 6 months
+›  Four summary figures below the chart: Total collected, Setup fees collected, Subscription 
+revenue, and Outstanding
+Note  The Profit figure is currently a placeholder calculated as roughly 65% of revenue — it is not based 
+on real cost data. This can be replaced with an accurate figure once actual costs (time, tools, overheads) 
+are defined.
+
+Galaxy — User & Instruction Guide     66
+Client table
+›  Status filter pills — All / Active / Trial / Blocked, click to filter the table
+›  Search box — filters by client name or contact person
+›  Columns: Client (with contact person underneath), Plan (colour-coded badge), Status, Setup 
+fee (progress, e.g. "2/4 months"), This month (Paid/Pending/Trial/Not entered badge), Next 
+due, and a View link
+›  Clicking anywhere on a row opens that client's detail popup
+16.3  Add Client popup
+▲  Add Client popup
+Fields
+›  Client / Business name, Contact person, Phone, Email (optional)
+›  Plan — dropdown of all 5 plans (see §16.5 for full pricing breakdown)
+›  A note box under the Plan field updates automatically to explain that plan's setup fee, 
+installment amount, and subscription cost the moment a plan is selected
+›  Start date — used to calculate the 7-day trial countdown and the next renewal date
+›  Setup fee payment — Full pay (one-time) or 4-month installment
+›  7-day free trial toggle — turn on for a new client who hasn't paid yet
+›  Notes — free text for anything specific about the client
+
+Galaxy — User & Instruction Guide     67
+Example with the Unlimited plan selected, showing the note box explaining its specific terms:
+▲  Add Client popup with Unlimited plan selected
+16.4  Client detail popup — payment tracking
+Opened by clicking any client row or its View link. This is where setup fee and subscription 
+payments are tracked and manually marked.
+
+Galaxy — User & Instruction Guide     68
+▲  Client detail popup — fixed-rate plan
+Setup fee tracker
+›  Full pay plans show a single row for the entire Rs. amount
+›  Installment plans show 4 separate rows (Month 1–4 of 4), each roughly a quarter of the 
+plan's setup fee
+›  Each row has its own "Mark paid" / "Mark unpaid" button — since there is no automated 
+payment system yet, this is a manual action done after confirming payment was received
+Subscription payments
+›  Shows the last 6 billing periods (months for Monthly and Unlimited plans, years for Yearly 
+plans)
+›  Each period has its own "Mark paid" / "Mark unpaid" button, same manual approach as the 
+setup fee
+
+Galaxy — User & Instruction Guide     69
+For Unlimited (pay-per-order) plan clients specifically
+▲  Client detail popup — Unlimited plan with editable monthly amounts
+›  Since the bill is different every month depending on order volume, each period row has an 
+editable Rs. amount field instead of a fixed price
+›  Type the month's bill amount into the field — it saves automatically when you click away
+›  "Mark paid" is blocked with an error message if no amount has been entered yet for that 
+period, to prevent accidentally marking an unknown amount as paid
+›  A period with no amount entered shows a "Not entered" badge in the main client table 
+instead of "Pending"
+Block / Unblock
+›  "⊘ Block client" button — manually cuts off a client (e.g. for non-payment); the button 
+changes to "✓ Unblock client" once blocked
+›  Blocking a client also turns off their trial flag, since a blocked client is no longer "on trial"
+
+Galaxy — User & Instruction Guide     70
+7-day trial countdown and auto-block
+›  While a client is on trial, the detail popup shows a note with the exact number of days 
+remaining
+›  If 7 days pass from the client's start date with no plan conversion, the system automatically 
+flips their status from Trial to Blocked — this happens on its own, with no manual action 
+needed
+›  Once payment is confirmed, manually click Unblock to restore their access
+Edit client
+›  "✎ Edit client" button — reopens the Add Client form pre-filled with this client's details for 
+editing
+16.5  Plans and pricing
+PlanSubscriptionSetup feeNotes
+Monthly — 2KRs. 2,000/monthRs. 20,000
+Full pay or 4× Rs. 5,000 
+installments
+Monthly — 5KRs. 5,000/monthRs. 20,000
+Full pay or 4× Rs. 5,000 
+installments
+Yearly — 2K packageRs. 20,000/yearRs. 40,000
+Discounted vs. paying 
+monthly; full pay or 4× 
+Rs. 10,000 installments
+Yearly — 5K packageRs. 50,000/yearRs. 70,000
+Discounted vs. paying 
+monthly; full pay or 4× 
+Rs. 17,500 installments
+Unlimited (pay-per-
+order)
+Rs. 7 per completed 
+order, billed manually 
+each month
+Rs. 20,000
+No yearly option; 
+intended for clients 
+doing 500+ 
+orders/month; full pay 
+or 4× Rs. 5,000 
+installments
+Note  All setup fees use the same two payment methods — full pay (one-time) or split across 4 monthly 
+installments. The installment amount shown in the Add Client note box is automatically calculated as the 
+plan's setup fee divided by 4.
+16.6  Announcement & Notifications
+Opened from the sidebar (Settings → Announcement). Two separate, independent features live 
+in this one popup.
+
+Galaxy — User & Instruction Guide     71
+▲  Announcement and Notifications popup
+Announcement images
+›  Up to 5 image slots, matching the announcement banner shown on the main Galaxy system
+›  Click an empty slot (showing a + icon) to upload an image from the device
+›  Each filled slot shows its position number and a ✕ button to remove it
+Notification panel
+›  A fully separate list of text notifications (title + message + date), independent from the 
+images above
+›  Newest notifications appear at the top of the list
+›  Title and Message fields plus an "+ Add notification" button create a new entry immediately
+›  Each notification has its own ✕ button to remove it individually
+›  An empty state message appears if no notifications exist yet
+
+Galaxy — User & Instruction Guide     72
+16.7  Known limitations
+›  All data lives only in the browser session — closing the tab resets everything back to the 
+sample data shown in this guide; there is no permanent storage or login persistence yet
+›  Payment marking is entirely manual — there is no integration with any real payment 
+gateway or bank feed
+›  The Profit figure on the income chart is an estimated 65% margin placeholder, not 
+calculated from real costs
