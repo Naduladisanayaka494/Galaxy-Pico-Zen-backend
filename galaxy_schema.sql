@@ -32,8 +32,8 @@ CREATE SCHEMA IF NOT EXISTS knox;
 
 SET search_path TO galaxy, public;
 
--- citext gives case-insensitive usernames/emails; comment out if unavailable.
-CREATE EXTENSION IF NOT EXISTS citext;
+-- Case-insensitive usernames/emails are enforced by UNIQUE indexes on lower(...)
+-- rather than the citext type, which Hibernate's schema validation cannot map.
 
 
 -- =====================================================================
@@ -155,8 +155,8 @@ CREATE TABLE users (
     id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     first_name     TEXT        NOT NULL,
     last_name      TEXT        NOT NULL,
-    email          CITEXT      UNIQUE,
-    username       CITEXT      NOT NULL UNIQUE,
+    email          TEXT        UNIQUE,
+    username       TEXT        NOT NULL UNIQUE,
     password_hash  TEXT        NOT NULL,           -- store a hash, never plaintext
     role           user_role   NOT NULL,
     phone          TEXT,
@@ -177,6 +177,10 @@ CREATE TABLE users (
         OR (commission_method = 'per_product_fixed'  AND commission_unit_amount IS NOT NULL)
     )
 );
+
+-- Usernames and emails are unique case-insensitively (§11.1).
+CREATE UNIQUE INDEX uq_users_username_lower ON users (lower(username));
+CREATE UNIQUE INDEX uq_users_email_lower    ON users (lower(email));
 
 -- Static role → feature access matrix (§11.4). Reference/lookup data.
 CREATE TABLE role_permissions (
@@ -298,11 +302,13 @@ CREATE TABLE customers (
     id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name       TEXT   NOT NULL,
     phone      TEXT   NOT NULL UNIQUE,
-    email      CITEXT,
+    email      TEXT,
     city_id    BIGINT REFERENCES cities(id) ON DELETE SET NULL,
     address    TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX idx_customers_email_lower ON customers (lower(email));
 
 CREATE TABLE orders (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
