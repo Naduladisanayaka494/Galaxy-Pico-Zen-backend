@@ -24,6 +24,8 @@ public class RegisterRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
+    /** Required, unlike before: this is the login identifier in knox.tenant_users. */
+    @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     private String email;
 

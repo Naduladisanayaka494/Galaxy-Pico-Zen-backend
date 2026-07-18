@@ -1,17 +1,20 @@
 -- =====================================================================
---  GALAXY — reference / seed data
---  Run after galaxy_schema.sql. Values taken verbatim from the guide.
+--  GALAXY — per-tenant reference data
+--
+--  Applied by TenantProvisioningService immediately after cloning the
+--  `galaxy` structure into a new tenant_<slug> schema.
+--
+--  Why this is a file and not rows copied from galaxy: `galaxy` is kept
+--  empty as a pure structural reference, so there is no data there to
+--  clone. Without this file a new tenant would come up with an EMPTY
+--  role_permissions table — i.e. no one can do anything.
+--
+--  Deliberately UNQUALIFIED: the caller sets search_path to the new schema.
+--  Values follow the Galaxy user guide (§11.4 role matrix).
+--  Both plan catalogues are platform data and are NOT seeded here: KNOX's own
+--  agency pricing (knox.plans) and Galaxy's own tiers (knox.galaxy_plans) both
+--  live in knox_platform.sql.
 -- =====================================================================
-SET search_path TO galaxy, public;
-
--- ---------------------------------------------------------------------
--- Galaxy subscription plans (§13.1). NULL limit = unlimited.
--- ---------------------------------------------------------------------
-INSERT INTO plans (plan, monthly_price, max_warehouses, max_products, max_orders_month, max_users) VALUES
-    ('basic',   2000.00, 1,    500,  100, 2),
-    ('nova',    5000.00, 3,    NULL, 500, 4),
-    ('stellar', NULL,    NULL, NULL, NULL, NULL)
-ON CONFLICT (plan) DO NOTHING;
 
 -- ---------------------------------------------------------------------
 -- Role → feature access matrix (§11.4)
@@ -96,26 +99,3 @@ INSERT INTO role_permissions (role, feature, access) VALUES
   ('stock_keeper','billing','none'),('delivery','billing','none'),
   ('accountant','billing','full')
 ON CONFLICT (role, feature) DO NOTHING;
-
--- ---------------------------------------------------------------------
--- Default business row (§12). Edit for the real client during setup (§15).
--- ---------------------------------------------------------------------
-INSERT INTO business_settings (id, business_name)
-VALUES (1, 'My Business')
-ON CONFLICT (id) DO NOTHING;
-
-
--- =====================================================================
--- KNOX Client Manager plans & pricing (§16.5)
--- =====================================================================
-SET search_path TO knox, public;
-
-INSERT INTO knox.plans (plan, subscription_fee, per_order_fee, setup_fee, is_yearly) VALUES
-    ('monthly_2k',  2000.00,  NULL, 20000.00, FALSE),
-    ('monthly_5k',  5000.00,  NULL, 20000.00, FALSE),
-    ('yearly_2k',  20000.00,  NULL, 40000.00, TRUE),
-    ('yearly_5k',  50000.00,  NULL, 70000.00, TRUE),
-    ('unlimited',   NULL,     7.00, 20000.00, FALSE)
-ON CONFLICT (plan) DO NOTHING;
-
-SET search_path TO galaxy, public;
