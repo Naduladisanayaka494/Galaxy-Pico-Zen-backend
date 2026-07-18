@@ -47,7 +47,7 @@ public class UserController {
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
+        dto.setRole(user.getRole().getName());
         dto.setPhone(user.getPhone());
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setCommissionEnabled(user.isCommissionEnabled());

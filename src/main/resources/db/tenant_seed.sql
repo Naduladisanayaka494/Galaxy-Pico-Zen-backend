@@ -17,12 +17,34 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- Role → feature access matrix (§11.4)
+-- Starting roles. Per-tenant and editable from here on — this is just the
+-- default set a new tenant gets, not a fixed platform list. 'owner' is
+-- is_system=true and must stay that way (see the comment on the roles table
+-- in tenant_template.sql); the rest are ordinary rows a tenant can rename,
+-- delete, or add siblings to once role management exists.
+-- ---------------------------------------------------------------------
+INSERT INTO roles (name, is_system) VALUES
+    ('owner', TRUE),
+    ('admin', FALSE),
+    ('manager', FALSE),
+    ('sales', FALSE),
+    ('stock_keeper', FALSE),
+    ('delivery', FALSE),
+    ('accountant', FALSE)
+ON CONFLICT ((lower(name))) DO NOTHING;
+
+-- ---------------------------------------------------------------------
+-- Role → feature access matrix (§11.4) for the roles seeded just above.
 --   full = ✓ | none = ✕ | no_price = "no price"
 --   Role order in each block: owner, admin, manager, sales,
 --                             stock_keeper, delivery, accountant
 -- ---------------------------------------------------------------------
-INSERT INTO role_permissions (role, feature, access) VALUES
+-- Role names, not IDs: roles.id is an identity column, so the actual
+-- integers aren't something a seed file should hardcode. Resolved via a join
+-- at insert time instead.
+INSERT INTO role_permissions (role_id, feature, access)
+SELECT r.id, v.feature, v.access::access_level
+FROM (VALUES
   -- Item Stock — view
   ('owner','item_stock_view','full'),('admin','item_stock_view','full'),
   ('manager','item_stock_view','full'),('sales','item_stock_view','no_price'),
@@ -98,4 +120,6 @@ INSERT INTO role_permissions (role, feature, access) VALUES
   ('manager','billing','none'),('sales','billing','none'),
   ('stock_keeper','billing','none'),('delivery','billing','none'),
   ('accountant','billing','full')
-ON CONFLICT (role, feature) DO NOTHING;
+) AS v(role_name, feature, access)
+JOIN roles r ON r.name = v.role_name
+ON CONFLICT (role_id, feature) DO NOTHING;

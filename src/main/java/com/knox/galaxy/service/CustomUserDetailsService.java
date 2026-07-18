@@ -53,7 +53,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getPasswordHash() == null ? "" : user.getPasswordHash(),
                 user.isActive(),
                 true, true, true,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()))
         );
     }
 }

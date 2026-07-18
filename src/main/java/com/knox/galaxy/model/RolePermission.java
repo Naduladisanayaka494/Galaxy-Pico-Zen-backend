@@ -19,10 +19,9 @@ import javax.persistence.*;
 public class RolePermission {
 
     @Id
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "user_role")
-    @Type(type = "pgsql_enum")
-    private UserRole role;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     @Id
     @Column(nullable = false)

@@ -61,6 +61,7 @@ public class TenantProvisioningService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TenantResolver tenantResolver;
+    private final com.knox.galaxy.repository.RoleRepository roleRepository;
 
     public TenantProvisioningService(JdbcTemplate jdbcTemplate,
                                      TenantRepository tenantRepository,
@@ -68,7 +69,8 @@ public class TenantProvisioningService {
                                      SubscriptionRepository subscriptionRepository,
                                      UserRepository userRepository,
                                      PasswordEncoder passwordEncoder,
-                                     TenantResolver tenantResolver) {
+                                     TenantResolver tenantResolver,
+                                     com.knox.galaxy.repository.RoleRepository roleRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.tenantRepository = tenantRepository;
         this.tenantUserRepository = tenantUserRepository;
@@ -76,6 +78,7 @@ public class TenantProvisioningService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tenantResolver = tenantResolver;
+        this.roleRepository = roleRepository;
     }
 
     public Tenant provision(ProvisionTenantCommand command) {
@@ -188,7 +191,12 @@ public class TenantProvisioningService {
             owner.setFirstName(command.getOwnerFirstName());
             owner.setLastName(command.getOwnerLastName());
             owner.setEmail(command.getOwnerEmail());
-            owner.setRole(UserRole.owner);
+            // Resolves against this tenant's own roles table — tenant_seed.sql
+            // just seeded it (stampTemplateAndSeed runs before createOwner),
+            // and 'owner' is the one role every tenant is guaranteed to have.
+            owner.setRole(roleRepository.findByName("owner")
+                    .orElseThrow(() -> new IllegalStateException(
+                            schemaName + ".roles has no 'owner' row; tenant_seed.sql did not run")));
             owner.setPasswordHash(passwordEncoder.encode(command.getOwnerPassword()));
             owner.setCreatedAt(LocalDateTime.now());
             owner.setUpdatedAt(LocalDateTime.now());

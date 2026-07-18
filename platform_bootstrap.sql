@@ -21,10 +21,6 @@ CREATE SCHEMA IF NOT EXISTS knox;
 --     entities would resolve to whichever copy the search_path found first.
 -- =====================================================================
 
-CREATE TYPE public.user_role AS ENUM (
-    'owner', 'admin', 'manager', 'sales', 'stock_keeper', 'delivery', 'accountant'
-);
-
 CREATE TYPE public.order_status AS ENUM (
     'processing', 'ready_to_ship', 'delivering', 'delivered',
     'cancelled', 'returned', 'refunded'

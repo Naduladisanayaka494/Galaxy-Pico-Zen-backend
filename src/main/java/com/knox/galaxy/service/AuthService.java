@@ -4,6 +4,7 @@ import com.knox.galaxy.config.JwtTokenProvider;
 import com.knox.galaxy.dto.LoginResponse;
 import com.knox.galaxy.dto.RegisterRequest;
 import com.knox.galaxy.model.*;
+import com.knox.galaxy.repository.RoleRepository;
 import com.knox.galaxy.repository.TenantRepository;
 import com.knox.galaxy.repository.TenantUserRepository;
 import com.knox.galaxy.repository.UserRepository;
@@ -35,19 +36,22 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final RoleRepository roleRepository;
 
     public AuthService(TenantUserRepository tenantUserRepository,
                        TenantRepository tenantRepository,
                        UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
-                       RefreshTokenService refreshTokenService) {
+                       RefreshTokenService refreshTokenService,
+                       RoleRepository roleRepository) {
         this.tenantUserRepository = tenantUserRepository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.refreshTokenService = refreshTokenService;
+        this.roleRepository = roleRepository;
     }
 
     /** Bundles the JSON body with the refresh token, which never appears in JSON — only as an httpOnly cookie. */
@@ -89,7 +93,7 @@ public class AuthService {
                 throw new DisabledException("Account is disabled");
             }
 
-            String role = localUser.getRole().name();
+            String role = localUser.getRole().getName();
             String jwt = tokenProvider.generateToken(
                     tenantUser.getEmail(), tenant.getId(), localUser.getId(), role);
             RefreshTokenService.IssuedToken refreshToken = refreshTokenService.issue(tenantUser.getId());
@@ -112,14 +116,25 @@ public class AuthService {
         TenantUser tenantUser = tenantUserRepository.findById(rotated.tenantUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
 
+        if (tenantUser.getStatus() != TenantUserStatus.active) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account is disabled");
+        }
+
         Tenant tenant = tenantRepository.findById(tenantUser.getTenantId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
+
+        if (tenant.getStatus() != TenantStatus.active) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tenant is " + tenant.getStatus());
+        }
 
         TenantContext.setSchema(tenant.getSchemaName());
         try {
             User localUser = userRepository.findById(tenantUser.getLocalUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
-            String role = localUser.getRole().name();
+            if (!localUser.isActive()) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account is disabled");
+            }
+            String role = localUser.getRole().getName();
             String jwt = tokenProvider.generateToken(tenantUser.getEmail(), tenant.getId(), localUser.getId(), role);
             return new LoginResult(new LoginResponse(jwt, "Bearer", localUser.getUsername(), role), rotated);
         } finally {
@@ -149,7 +164,8 @@ public class AuthService {
             user.setFirstName(command.getFirstName());
             user.setLastName(command.getLastName());
             user.setEmail(command.getEmail());
-            user.setRole(command.getRole());
+            user.setRole(roleRepository.findByName(command.getRole())
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown role: " + command.getRole())));
             user.setPhone(command.getPhone());
             user.setAvatarUrl(command.getAvatarUrl());
 

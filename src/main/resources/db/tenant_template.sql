@@ -101,8 +101,23 @@ CREATE TABLE discount_codes (
 
 
 -- =====================================================================
--- 3. STAFF — users, permissions, commission, leave
+-- 3. STAFF — roles, users, permissions, commission, leave
 -- =====================================================================
+
+-- Per-tenant, not shared: each business can rename, add, or remove roles to
+-- fit how they actually run their team. 'owner' is seeded with is_system=true
+-- (see tenant_seed.sql) and must stay that way — it's the one role every
+-- tenant is guaranteed to have, so provisioning and support tooling can rely
+-- on it existing. Enforcing "can't delete/rename a system role" is an
+-- application-layer rule (no role-management endpoint exists yet to enforce
+-- it against); the column just marks intent for whenever that's built.
+CREATE TABLE roles (
+    id         SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name       TEXT     NOT NULL,
+    is_system  BOOLEAN  NOT NULL DEFAULT FALSE
+);
+
+CREATE UNIQUE INDEX uq_roles_name_lower ON roles (lower(name));
 
 -- Profile, role and commission for a tenant member. Credentials are NOT here:
 -- they live in knox.tenant_users, because login must resolve the tenant before
@@ -115,7 +130,7 @@ CREATE TABLE users (
     email          TEXT        UNIQUE,
     username       TEXT        NOT NULL UNIQUE,
     password_hash  TEXT        NOT NULL,           -- store a hash, never plaintext
-    role           user_role   NOT NULL,
+    role_id        SMALLINT    NOT NULL REFERENCES roles(id),
     phone          TEXT,
     avatar_url     TEXT,
     is_active      BOOLEAN     NOT NULL DEFAULT TRUE,   -- Status On/Off toggle (§11.1)
@@ -140,12 +155,14 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX uq_users_username_lower ON users (lower(username));
 CREATE UNIQUE INDEX uq_users_email_lower    ON users (lower(email));
 
--- Static role → feature access matrix (§11.4). Reference/lookup data.
+-- Role → feature access matrix (§11.4). Starts as reference/lookup data
+-- (tenant_seed.sql), but is per-tenant editable data now, not a fixed table:
+-- a tenant can add a role and its own permission rows for it.
 CREATE TABLE role_permissions (
-    role     user_role    NOT NULL,
+    role_id  SMALLINT     NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     feature  TEXT         NOT NULL,   -- e.g. 'item_stock_view', 'billing'
     access   access_level NOT NULL,
-    PRIMARY KEY (role, feature)
+    PRIMARY KEY (role_id, feature)
 );
 
 -- Leave requests (§14.4 — Coming Soon; modelled for completeness)

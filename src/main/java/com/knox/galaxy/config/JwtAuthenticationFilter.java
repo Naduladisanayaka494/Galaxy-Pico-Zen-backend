@@ -83,6 +83,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             TenantContext.bind(tenantId, tenantResolver.schemaFor(tenantId));
 
             UserDetails userDetails = userDetailsService.loadUserByLocalId(localUserId);
+            if (!userDetails.isEnabled()) {
+                throw new org.springframework.security.authentication.DisabledException("Account is disabled");
+            }
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
