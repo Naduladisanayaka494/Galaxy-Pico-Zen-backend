@@ -1,36 +1,43 @@
 -- =====================================================================
 --  GALAXY — tenant schema DDL (§ refs are to Galaxy_User_Guide.pdf v1.1)
 --
---  This is THE canonical definition of a tenant. TenantProvisioningService
---  runs it verbatim into every fresh tenant_<slug> schema:
+--  This is THE canonical definition of a tenant. TenantMigrationService runs
+--  every file in this folder, in order, against one tenant_<slug> schema at a
+--  time via its own Flyway instance (schemas(schemaName), this folder as the
+--  only location) — never through Spring Boot's auto-configured Flyway,
+--  which only ever manages one schema (the platform one).
 --
---      CREATE SCHEMA "tenant_acme";
---      SET search_path TO "tenant_acme", public;
---      <this file>
---      <tenant_seed.sql>
+--  New tenants: TenantProvisioningService creates the empty schema, then
+--  calls TenantMigrationService.migrate(schemaName), which runs V1, V2, ...
+--  in full, for real.
+--
+--  Existing tenants: a boot-time runner calls the same migrate() for every
+--  row in knox.tenants. A schema that already has these tables but no
+--  flyway_schema_history yet (every tenant that predates this migration
+--  system) gets baselined at V1 instead of having V1 re-run — see
+--  TenantMigrationService for the baseline config. Only V2 onward actually
+--  executes against it. Adding a new file here is what "migrating all
+--  tenants" now means — no more hand-written one-off ALTER scripts run
+--  against each schema individually.
 --
 --  It also builds the `galaxy` schema, which is kept in the database purely
 --  as a live, queryable reference for development — NOT as a template
---  provisioning reads from. There is no runtime cloning: nothing introspects
---  galaxy's catalog. If you change this file, mirror the change into galaxy
---  by hand (or drop and rebuild galaxy from this file) so the two stay
---  identical; they are two independent copies of the same DDL, not a
---  source-and-derivative pair.
---
---  Consequence: editing this file changes what NEW tenants get. EXISTING
---  tenant_<slug> schemas do not follow — that needs a migration run across
---  each of them individually.
+--  provisioning reads from, and NOT looped over by the tenant migration
+--  runner (it isn't a row in knox.tenants). If you change this file, mirror
+--  the change into galaxy by hand so the two stay identical; they are two
+--  independent copies of the same DDL, not a source-and-derivative pair.
 --
 --  Every identifier here is deliberately UNQUALIFIED so the search_path
 --  decides where it lands. Do not schema-qualify anything, and do not add a
---  SET search_path line.
+--  SET search_path line — Flyway sets it from schemas(schemaName).
 --
 --  Shared enum types and touch_updated_at() come from `public`; see
---  platform_bootstrap.sql. Billing lives entirely in knox.subscriptions +
---  knox.galaxy_plans (see knox_platform.sql) — no plans/subscription/invoices
---  tables here. Under the original single-tenant design those described "what
---  this business pays Galaxy"; under schema-per-tenant that is platform data,
---  not tenant data, so it does not belong in a schema the tenant itself reads.
+--  db/migration/platform/V1__baseline.sql. Billing lives entirely in
+--  knox.subscriptions + knox.galaxy_plans — no plans/subscription/invoices
+--  tables here. Under the original single-tenant design those described
+--  "what this business pays Galaxy"; under schema-per-tenant that is
+--  platform data, not tenant data, so it does not belong in a schema the
+--  tenant itself reads.
 -- =====================================================================
 
 
@@ -106,7 +113,7 @@ CREATE TABLE discount_codes (
 
 -- Per-tenant, not shared: each business can rename, add, or remove roles to
 -- fit how they actually run their team. 'owner' is seeded with is_system=true
--- (see tenant_seed.sql) and must stay that way — it's the one role every
+-- (see V2__seed.sql) and must stay that way — it's the one role every
 -- tenant is guaranteed to have, so provisioning and support tooling can rely
 -- on it existing. Enforcing "can't delete/rename a system role" is an
 -- application-layer rule (no role-management endpoint exists yet to enforce
@@ -156,7 +163,7 @@ CREATE UNIQUE INDEX uq_users_username_lower ON users (lower(username));
 CREATE UNIQUE INDEX uq_users_email_lower    ON users (lower(email));
 
 -- Role → feature access matrix (§11.4). Starts as reference/lookup data
--- (tenant_seed.sql), but is per-tenant editable data now, not a fixed table:
+-- (V2__seed.sql), but is per-tenant editable data now, not a fixed table:
 -- a tenant can add a role and its own permission rows for it.
 CREATE TABLE role_permissions (
     role_id  SMALLINT     NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
@@ -426,7 +433,7 @@ FROM orders o
 LEFT JOIN order_items oi ON oi.order_id = o.id
 GROUP BY o.id;
 
--- Bind to the shared function in public (see platform_bootstrap.sql).
+-- Bind to the shared function in public (see db/migration/platform/V1__baseline.sql).
 CREATE TRIGGER trg_products_touch      BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 CREATE TRIGGER trg_orders_touch        BEFORE UPDATE ON orders

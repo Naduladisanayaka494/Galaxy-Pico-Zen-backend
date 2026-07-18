@@ -1,33 +1,82 @@
 -- =====================================================================
---  KNOX PLATFORM — control plane for schema-per-tenant Galaxy
+--  KNOX PLATFORM — control plane for schema-per-tenant Galaxy (Flyway V1)
 --
---  `knox` is the platform schema. It answers three questions that must be
---  answerable BEFORE any tenant schema is selected:
+--  This is the Flyway baseline for the platform schemas (`knox` + `public`).
+--  It is the original platform_bootstrap.sql + knox_platform.sql, merged.
+--
+--  On a fresh, empty database this runs for real and builds everything.
+--  On the existing hand-built database, Flyway's baseline-on-migrate (see
+--  application.properties) marks this version as already applied instead of
+--  re-running it — the schema it describes already exists there, built by
+--  hand before Flyway was introduced. Either way, every migration from V2 on
+--  is tracked in knox.flyway_schema_history and applied exactly once.
+--
+--  `knox` answers three questions that must be answerable BEFORE any tenant
+--  schema is selected:
 --     1. who is this person?        -> knox.tenant_users
 --     2. which tenant/schema?       -> knox.tenants
 --     3. are they paid up?          -> knox.subscriptions
 --
 --  Each tenant's business data lives in its own `tenant_<slug>` schema,
---  stamped from the galaxy template. Shared enum types live in `public`.
+--  migrated independently — see db/migration/tenant/. Shared enum types and
+--  the touch_updated_at() trigger function live in `public` (part 1 below):
+--  `public` trails every tenant's search_path, so one definition serves all
+--  of them instead of N copies to keep in step.
 --
 --  It also holds the KNOX Client Manager (§16): KNOX's own agency clients and
---  their billing. Those tables come first because knox.tenants references
---  knox.clients. KNOX staff identity (knox.platform_users) is defined at the
---  end — a standalone table with no FK to or from anything else here.
---
---  Install order:
---     1. platform_bootstrap.sql   (schemas, shared enums, touch_updated_at())
---     2. knox_platform.sql        <- this file
---     3. src/main/resources/db/tenant_template.sql, run into `galaxy` (the
---        dev reference copy). Provisioning stamps the same file per tenant —
---        it does not clone galaxy at runtime.
+--  their billing. Those tables come before knox.tenants because
+--  knox.tenants.client_id references knox.clients. KNOX staff identity
+--  (knox.platform_users) is defined at the end — a standalone table with no
+--  FK to or from anything else here.
+-- =====================================================================
+
+CREATE SCHEMA IF NOT EXISTS knox;
+
+-- =====================================================================
+-- PART 1 — shared objects in `public`
+-- =====================================================================
+
+CREATE TYPE public.order_status AS ENUM (
+    'processing', 'ready_to_ship', 'delivering', 'delivered',
+    'cancelled', 'returned', 'refunded'
+);
+
+CREATE TYPE public.stock_movement_type AS ENUM (
+    'initial_stock', 'refill', 'transfer'
+);
+
+CREATE TYPE public.discount_type AS ENUM ('percentage', 'fixed');
+
+CREATE TYPE public.commission_method AS ENUM ('product_percentage', 'per_product_fixed');
+
+CREATE TYPE public.finance_kind   AS ENUM ('revenue', 'expense');
+CREATE TYPE public.finance_source AS ENUM ('auto', 'manual');
+
+CREATE TYPE public.notification_type AS ENUM (
+    'low_stock', 'transfer_complete', 'order_delivered',
+    'new_order', 'order_status_update', 'user_added', 'product_added'
+);
+
+CREATE TYPE public.feedback_type AS ENUM ('complaint', 'recommendation', 'question');
+
+CREATE TYPE public.access_level AS ENUM ('full', 'view', 'no_price', 'none');
+
+CREATE TYPE public.billing_plan AS ENUM ('basic', 'nova', 'stellar');
+
+CREATE OR REPLACE FUNCTION public.touch_updated_at() RETURNS trigger AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- =====================================================================
+-- PART 2 — knox control plane
 -- =====================================================================
 
 SET search_path TO knox, public;
 
--- ---------------------------------------------------------------------
--- Types
--- ---------------------------------------------------------------------
 CREATE TYPE knox.tenant_status AS ENUM (
     'provisioning',   -- schema being created; no logins yet
     'active',
@@ -42,12 +91,11 @@ CREATE TYPE knox.subscription_status AS ENUM (
 CREATE TYPE knox.tenant_user_status AS ENUM ('active', 'disabled');
 
 
--- =====================================================================
+-- ---------------------------------------------------------------------
 -- KNOX Client Manager (§16) — KNOX's own agency clients & their billing.
--- Defined before the tenant tables because knox.tenants.client_id references
--- knox.clients. Distinct from the tenant billing above: a client is someone
--- KNOX invoices; a tenant is a provisioned Galaxy schema.
--- =====================================================================
+-- Distinct from the tenant billing below: a client is someone KNOX invoices;
+-- a tenant is a provisioned Galaxy schema.
+-- ---------------------------------------------------------------------
 
 CREATE TYPE knox.knox_plan AS ENUM (
     'monthly_2k', 'monthly_5k', 'yearly_2k', 'yearly_5k', 'unlimited'
@@ -236,7 +284,7 @@ CREATE INDEX idx_refresh_tokens_active ON knox.refresh_tokens (tenant_user_id) W
 -- This used to be a per-tenant table (plans/subscription/invoices, one copy
 -- per tenant_<slug>). It described "what this business pays Galaxy", which
 -- under schema-per-tenant is platform data, not tenant data: a tenant has no
--- business reading or writing its own billing truth. It now lives here, once,
+-- business reading or writing its own billing truth. It lives here, once,
 -- and knox.subscriptions.plan references it directly.
 -- ---------------------------------------------------------------------
 CREATE TABLE knox.galaxy_plans (
@@ -294,7 +342,7 @@ CREATE INDEX idx_subscriptions_status ON knox.subscriptions (status);
 
 
 -- ---------------------------------------------------------------------
--- updated_at triggers (function lives in public, see platform_bootstrap.sql)
+-- updated_at triggers (function lives in public, part 1 above)
 -- ---------------------------------------------------------------------
 CREATE TRIGGER trg_tenants_touch       BEFORE UPDATE ON knox.tenants
     FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
@@ -352,4 +400,4 @@ INSERT INTO knox.platform_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 CREATE TRIGGER trg_platform_settings_touch BEFORE UPDATE ON knox.platform_settings
     FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
-SET search_path TO galaxy, public;
+SET search_path TO public;

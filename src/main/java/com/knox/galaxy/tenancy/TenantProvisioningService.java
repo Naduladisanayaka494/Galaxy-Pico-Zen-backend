@@ -7,15 +7,10 @@ import com.knox.galaxy.repository.TenantUserRepository;
 import com.knox.galaxy.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.regex.Pattern;
@@ -23,18 +18,19 @@ import java.util.regex.Pattern;
 /**
  * Creates a tenant: its schema, its tables, its reference data and its owner.
  *
- * <p>Structure is STAMPED from {@code db/tenant_template.sql} — plain
- * {@code CREATE TABLE} statements run with the new schema on the search_path.
- * There is deliberately no runtime cloning of the {@code galaxy} schema (no
+ * <p>Structure and reference data come from {@code db/migration/tenant/}, run
+ * via {@link TenantMigrationService} — the same Flyway migration set an
+ * existing tenant gets brought up to date with by {@link TenantMigrationRunner}.
+ * A new tenant is therefore built by running every migration in order, not by
+ * stamping a single snapshot file: it starts on the latest schema version, the
+ * same one every other tenant converges to.
+ *
+ * <p>There is deliberately no runtime cloning of the {@code galaxy} schema (no
  * catalog introspection, no PL/pgSQL): every tenant is built the same
  * reviewable way a fresh database is built. The cost of this is that galaxy
- * and tenant_template.sql are two things a human keeps in sync by hand —
+ * and db/migration/tenant are two things a human keeps in sync by hand —
  * change one, mirror it in the other — rather than galaxy alone being able to
  * define a tenant.
- *
- * <p>Reference rows come from {@code db/tenant_seed.sql}: without it a tenant
- * would start with an empty role_permissions matrix and nobody could do
- * anything.
  *
  * <p>Not atomic. PostgreSQL can roll back DDL, but this spans the platform
  * schema and a brand-new tenant schema across several Hibernate sessions
@@ -62,6 +58,7 @@ public class TenantProvisioningService {
     private final PasswordEncoder passwordEncoder;
     private final TenantResolver tenantResolver;
     private final com.knox.galaxy.repository.RoleRepository roleRepository;
+    private final TenantMigrationService tenantMigrationService;
 
     public TenantProvisioningService(JdbcTemplate jdbcTemplate,
                                      TenantRepository tenantRepository,
@@ -70,7 +67,8 @@ public class TenantProvisioningService {
                                      UserRepository userRepository,
                                      PasswordEncoder passwordEncoder,
                                      TenantResolver tenantResolver,
-                                     com.knox.galaxy.repository.RoleRepository roleRepository) {
+                                     com.knox.galaxy.repository.RoleRepository roleRepository,
+                                     TenantMigrationService tenantMigrationService) {
         this.jdbcTemplate = jdbcTemplate;
         this.tenantRepository = tenantRepository;
         this.tenantUserRepository = tenantUserRepository;
@@ -79,6 +77,7 @@ public class TenantProvisioningService {
         this.passwordEncoder = passwordEncoder;
         this.tenantResolver = tenantResolver;
         this.roleRepository = roleRepository;
+        this.tenantMigrationService = tenantMigrationService;
     }
 
     public Tenant provision(ProvisionTenantCommand command) {
@@ -112,7 +111,7 @@ public class TenantProvisioningService {
 
         try {
             createSchema(schemaName);
-            stampTemplateAndSeed(schemaName);
+            tenantMigrationService.migrate(schemaName);
             seedBusinessSettings(schemaName, command.getBusinessName());
 
             User owner = createOwner(schemaName, command);
@@ -138,42 +137,6 @@ public class TenantProvisioningService {
         // schemaName is derived from a slug already matched against SAFE_SLUG,
         // and CREATE SCHEMA takes an identifier that cannot be bound.
         jdbcTemplate.execute("CREATE SCHEMA \"" + schemaName + "\"");
-    }
-
-    /**
-     * Runs tenant_template.sql (structure) then tenant_seed.sql (reference
-     * rows) with the new schema first on the search_path, so their unqualified
-     * statements land there while shared enum types still resolve from public.
-     * Same connection, same search_path setting, because the seed's INSERTs
-     * depend on tables the template just created.
-     */
-    private void stampTemplateAndSeed(String schemaName) {
-        String template = readClasspath("db/tenant_template.sql");
-        String seed = readClasspath("db/tenant_seed.sql");
-        jdbcTemplate.execute((java.sql.Connection connection) -> {
-            try {
-                try (java.sql.Statement statement = connection.createStatement()) {
-                    statement.execute("SET search_path TO \"" + schemaName + "\", public");
-                    statement.execute(template);
-                    statement.execute(seed);
-                }
-            } finally {
-                // This connection goes back to a pool shared with tenant traffic.
-                try (java.sql.Statement reset = connection.createStatement()) {
-                    reset.execute("SET search_path TO public");
-                }
-            }
-            return null;
-        });
-    }
-
-    private String readClasspath(String path) {
-        try (InputStreamReader reader = new InputStreamReader(
-                new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8)) {
-            return FileCopyUtils.copyToString(reader);
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot read " + path + " from classpath", e);
-        }
     }
 
     /** business_settings is pinned to one row; without it the tenant's settings screen has nothing to read. */

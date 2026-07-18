@@ -1,27 +1,33 @@
 -- =====================================================================
 --  GALAXY — per-tenant reference data
 --
---  Applied by TenantProvisioningService immediately after cloning the
---  `galaxy` structure into a new tenant_<slug> schema.
+--  Runs immediately after V1__init.sql in the same tenant Flyway instance.
 --
 --  Why this is a file and not rows copied from galaxy: `galaxy` is kept
 --  empty as a pure structural reference, so there is no data there to
 --  clone. Without this file a new tenant would come up with an EMPTY
 --  role_permissions table — i.e. no one can do anything.
 --
---  Deliberately UNQUALIFIED: the caller sets search_path to the new schema.
+--  Both INSERTs are idempotent (ON CONFLICT DO NOTHING), which matters for
+--  the tenants baselined at V1 (every tenant that predates this migration
+--  system): baselining marks V1 as done without running it, but V2 still
+--  actually executes against them — safe, since it only adds rows that are
+--  missing, never duplicates or overwrites ones already there.
+--
+--  Deliberately UNQUALIFIED: TenantMigrationService sets search_path to the
+--  target tenant schema via Flyway's schemas(...) config.
 --  Values follow the Galaxy user guide (§11.4 role matrix).
 --  Both plan catalogues are platform data and are NOT seeded here: KNOX's own
 --  agency pricing (knox.plans) and Galaxy's own tiers (knox.galaxy_plans) both
---  live in knox_platform.sql.
+--  live in db/migration/platform/V1__baseline.sql.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
 -- Starting roles. Per-tenant and editable from here on — this is just the
 -- default set a new tenant gets, not a fixed platform list. 'owner' is
 -- is_system=true and must stay that way (see the comment on the roles table
--- in tenant_template.sql); the rest are ordinary rows a tenant can rename,
--- delete, or add siblings to once role management exists.
+-- in V1__init.sql); the rest are ordinary rows a tenant can rename, delete,
+-- or add siblings to once role management exists.
 -- ---------------------------------------------------------------------
 INSERT INTO roles (name, is_system) VALUES
     ('owner', TRUE),
