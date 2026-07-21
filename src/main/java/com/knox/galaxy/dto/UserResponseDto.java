@@ -1,7 +1,6 @@
 package com.knox.galaxy.dto;
 
 import com.knox.galaxy.model.CommissionMethod;
-import com.knox.galaxy.model.UserRole;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,7 +12,7 @@ public class UserResponseDto {
     private String firstName;
     private String lastName;
     private String email;
-    private UserRole role;
+    private String role;
     private String phone;
     private String avatarUrl;
     private boolean commissionEnabled;

@@ -38,10 +38,12 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "user_role")
-    @Type(type = "pgsql_enum")
-    private UserRole role;
+    // EAGER: role is needed on every authenticated request (Spring Security
+    // authority derivation in CustomUserDetailsService) — LAZY would risk a
+    // LazyInitializationException outside whatever transaction loaded the User.
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     private String phone;
 

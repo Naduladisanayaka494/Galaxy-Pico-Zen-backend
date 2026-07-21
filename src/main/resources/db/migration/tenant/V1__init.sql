@@ -1,92 +1,52 @@
 -- =====================================================================
---  GALAXY — Stock & Order Management System
---  PostgreSQL schema (server-connected version)
---  Derived from: Galaxy_User_Guide.pdf  (v1.1, June 2026 — KNOX Digital)
+--  GALAXY — tenant schema DDL (§ refs are to Galaxy_User_Guide.pdf v1.1)
 --
---  Target: PostgreSQL 13+
---  Money : NUMERIC(14,2) in the business currency (default LKR)
---  Notes : Single-business deployment (one install = one client).
---          To make it multi-tenant, add a business_id FK to every table
---          and scope unique constraints by business_id.
+--  This is THE canonical definition of a tenant. TenantMigrationService runs
+--  every file in this folder, in order, against one tenant_<slug> schema at a
+--  time via its own Flyway instance (schemas(schemaName), this folder as the
+--  only location) — never through Spring Boot's auto-configured Flyway,
+--  which only ever manages one schema (the platform one).
 --
---  Sections
---    0. Schemas & extensions
---    1. Enumerated types
---    2. Settings & reference data  (business, cities, delivery/payment/discount)
---    3. Staff (users, roles, permissions, commission, leave)
---    4. Inventory (warehouses, products, images, stock, movements)
---    5. Customers & Orders (orders, items, status history)
---    6. Finance
---    7. Notifications / announcements / feedback
---    8. Billing (subscription & invoices)
---    9. Views & helper functions
---   10. KNOX Client Manager  (separate internal tool — schema `knox`)
+--  New tenants: TenantProvisioningService creates the empty schema, then
+--  calls TenantMigrationService.migrate(schemaName), which runs V1, V2, ...
+--  in full, for real.
+--
+--  Existing tenants: a boot-time runner calls the same migrate() for every
+--  row in knox.tenants. A schema that already has these tables but no
+--  flyway_schema_history yet (every tenant that predates this migration
+--  system) gets baselined at V1 instead of having V1 re-run — see
+--  TenantMigrationService for the baseline config. Only V2 onward actually
+--  executes against it. Adding a new file here is what "migrating all
+--  tenants" now means — no more hand-written one-off ALTER scripts run
+--  against each schema individually.
+--
+--  It also builds the `galaxy` schema, which is kept in the database purely
+--  as a live, queryable reference for development — NOT as a template
+--  provisioning reads from, and NOT looped over by the tenant migration
+--  runner (it isn't a row in knox.tenants). If you change this file, mirror
+--  the change into galaxy by hand so the two stay identical; they are two
+--  independent copies of the same DDL, not a source-and-derivative pair.
+--
+--  Every identifier here is deliberately UNQUALIFIED so the search_path
+--  decides where it lands. Do not schema-qualify anything, and do not add a
+--  SET search_path line — Flyway sets it from schemas(schemaName).
+--
+--  Shared enum types and touch_updated_at() come from `public`; see
+--  db/migration/platform/V1__baseline.sql. Billing lives entirely in
+--  knox.subscriptions + knox.galaxy_plans — no plans/subscription/invoices
+--  tables here. Under the original single-tenant design those described
+--  "what this business pays Galaxy"; under schema-per-tenant that is
+--  platform data, not tenant data, so it does not belong in a schema the
+--  tenant itself reads.
 -- =====================================================================
-
-
--- =====================================================================
--- 0. SCHEMAS & EXTENSIONS
--- =====================================================================
-CREATE SCHEMA IF NOT EXISTS galaxy;
-CREATE SCHEMA IF NOT EXISTS knox;
-
-SET search_path TO galaxy, public;
-
--- Case-insensitive usernames/emails are enforced by UNIQUE indexes on lower(...)
--- rather than the citext type, which Hibernate's schema validation cannot map.
-
-
--- =====================================================================
--- 1. ENUMERATED TYPES
--- =====================================================================
-
--- The 7 staff roles (§11.2)
-CREATE TYPE user_role AS ENUM (
-    'owner', 'admin', 'manager', 'sales', 'stock_keeper', 'delivery', 'accountant'
-);
-
--- The 7 order statuses (§8.5)
-CREATE TYPE order_status AS ENUM (
-    'processing', 'ready_to_ship', 'delivering', 'delivered',
-    'cancelled', 'returned', 'refunded'
-);
-
--- Stock History event types (§5.5)
-CREATE TYPE stock_movement_type AS ENUM (
-    'initial_stock', 'refill', 'transfer'
-);
-
--- Discount code kinds (§12.1)
-CREATE TYPE discount_type AS ENUM ('percentage', 'fixed');
-
--- Commission calculation methods (§11.2)
-CREATE TYPE commission_method AS ENUM ('product_percentage', 'per_product_fixed');
-
--- Finance line kinds & source (§10.5)
-CREATE TYPE finance_kind   AS ENUM ('revenue', 'expense');
-CREATE TYPE finance_source AS ENUM ('auto', 'manual');
-
--- Notification / alert types (§14.6 + §12.5)
-CREATE TYPE notification_type AS ENUM (
-    'low_stock', 'transfer_complete', 'order_delivered',
-    'new_order', 'order_status_update', 'user_added', 'product_added'
-);
-
--- Feedback types (§14.3)
-CREATE TYPE feedback_type AS ENUM ('complaint', 'recommendation', 'question');
-
--- Access level used by the role-permission matrix (§11.4)
-CREATE TYPE access_level AS ENUM ('full', 'view', 'no_price', 'none');
-
--- Galaxy subscription plans (§13.1)
-CREATE TYPE billing_plan AS ENUM ('basic', 'nova', 'stellar');
 
 
 -- =====================================================================
 -- 2. SETTINGS & REFERENCE DATA
 -- =====================================================================
 
--- Single-row business configuration (§12). id is pinned to 1.
+-- Single-row business configuration (§12). id is pinned to 1 — correct under
+-- schema-per-tenant, where each tenant owns its own copy of this table.
 CREATE TABLE business_settings (
     id                    SMALLINT     PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     business_name         TEXT         NOT NULL,
@@ -148,9 +108,28 @@ CREATE TABLE discount_codes (
 
 
 -- =====================================================================
--- 3. STAFF — users, permissions, commission, leave
+-- 3. STAFF — roles, users, permissions, commission, leave
 -- =====================================================================
 
+-- Per-tenant, not shared: each business can rename, add, or remove roles to
+-- fit how they actually run their team. 'owner' is seeded with is_system=true
+-- (see V2__seed.sql) and must stay that way — it's the one role every
+-- tenant is guaranteed to have, so provisioning and support tooling can rely
+-- on it existing. Enforcing "can't delete/rename a system role" is an
+-- application-layer rule (no role-management endpoint exists yet to enforce
+-- it against); the column just marks intent for whenever that's built.
+CREATE TABLE roles (
+    id         SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name       TEXT     NOT NULL,
+    is_system  BOOLEAN  NOT NULL DEFAULT FALSE
+);
+
+CREATE UNIQUE INDEX uq_roles_name_lower ON roles (lower(name));
+
+-- Profile, role and commission for a tenant member. Credentials are NOT here:
+-- they live in knox.tenant_users, because login must resolve the tenant before
+-- any tenant schema is on the search_path. password_hash is retained for the
+-- Spring Security contract and legacy rows.
 CREATE TABLE users (
     id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     first_name     TEXT        NOT NULL,
@@ -158,7 +137,7 @@ CREATE TABLE users (
     email          TEXT        UNIQUE,
     username       TEXT        NOT NULL UNIQUE,
     password_hash  TEXT        NOT NULL,           -- store a hash, never plaintext
-    role           user_role   NOT NULL,
+    role_id        SMALLINT    NOT NULL REFERENCES roles(id),
     phone          TEXT,
     avatar_url     TEXT,
     is_active      BOOLEAN     NOT NULL DEFAULT TRUE,   -- Status On/Off toggle (§11.1)
@@ -178,16 +157,19 @@ CREATE TABLE users (
     )
 );
 
--- Usernames and emails are unique case-insensitively (§11.1).
+-- Usernames and emails are unique case-insensitively WITHIN this tenant (§11.1).
+-- Global uniqueness of the login identifier is knox.tenant_users' job.
 CREATE UNIQUE INDEX uq_users_username_lower ON users (lower(username));
 CREATE UNIQUE INDEX uq_users_email_lower    ON users (lower(email));
 
--- Static role → feature access matrix (§11.4). Reference/lookup data.
+-- Role → feature access matrix (§11.4). Starts as reference/lookup data
+-- (V2__seed.sql), but is per-tenant editable data now, not a fixed table:
+-- a tenant can add a role and its own permission rows for it.
 CREATE TABLE role_permissions (
-    role     user_role    NOT NULL,
+    role_id  SMALLINT     NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     feature  TEXT         NOT NULL,   -- e.g. 'item_stock_view', 'billing'
     access   access_level NOT NULL,
-    PRIMARY KEY (role, feature)
+    PRIMARY KEY (role_id, feature)
 );
 
 -- Leave requests (§14.4 — Coming Soon; modelled for completeness)
@@ -421,45 +403,7 @@ CREATE TABLE feedback (
 
 
 -- =====================================================================
--- 8. BILLING — Galaxy subscription (§13)
--- =====================================================================
-
--- Plan catalogue with limits (§13.1). NULL = unlimited.
-CREATE TABLE plans (
-    plan              billing_plan  PRIMARY KEY,
-    monthly_price     NUMERIC(14,2),         -- NULL for Stellar (custom)
-    max_warehouses    INTEGER,
-    max_products      INTEGER,
-    max_orders_month  INTEGER,
-    max_users         INTEGER
-);
-
--- The single active subscription for this business (§13.1 / §13.2).
-CREATE TABLE subscription (
-    id              SMALLINT     PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    plan            billing_plan NOT NULL REFERENCES plans(plan),
-    started_at      DATE         NOT NULL,
-    next_renewal    DATE,
-    outstanding     NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (outstanding >= 0),
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
-);
-
--- Payment history / invoices (§13.3)
-CREATE TABLE invoices (
-    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    invoice_no     TEXT          NOT NULL UNIQUE,        -- e.g. "INV-0041"
-    period         TEXT          NOT NULL,               -- billing month label
-    plan           billing_plan  NOT NULL,
-    amount         NUMERIC(14,2) NOT NULL CHECK (amount >= 0),
-    method         TEXT          NOT NULL,               -- Cash / Bank transfer
-    invoice_date   DATE          NOT NULL,
-    status         TEXT          NOT NULL DEFAULT 'paid', -- paid / pending
-    created_at     TIMESTAMPTZ   NOT NULL DEFAULT now()
-);
-
-
--- =====================================================================
--- 9. VIEWS & HELPER FUNCTIONS
+-- 8. VIEWS & TRIGGERS
 -- =====================================================================
 
 -- Total available quantity per product across all warehouses (§5 Available Qty).
@@ -489,96 +433,10 @@ FROM orders o
 LEFT JOIN order_items oi ON oi.order_id = o.id
 GROUP BY o.id;
 
--- updated_at auto-touch trigger
-CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS trigger AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
+-- Bind to the shared function in public (see db/migration/platform/V1__baseline.sql).
 CREATE TRIGGER trg_products_touch      BEFORE UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 CREATE TRIGGER trg_orders_touch        BEFORE UPDATE ON orders
-    FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 CREATE TRIGGER trg_users_touch         BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-
-
--- =====================================================================
--- 10. KNOX CLIENT MANAGER  (separate internal tool — §16)
---     Tracks KNOX's own agency clients & their billing.
---     Kept in its own schema; not part of the Galaxy retail system.
--- =====================================================================
-SET search_path TO knox, public;
-
-CREATE TYPE knox_plan AS ENUM (
-    'monthly_2k', 'monthly_5k', 'yearly_2k', 'yearly_5k', 'unlimited'
-);
-CREATE TYPE knox_status       AS ENUM ('active', 'trial', 'blocked');
-CREATE TYPE knox_setup_option AS ENUM ('full', 'installment_4');
-
-CREATE TABLE knox.plans (
-    plan             knox_plan     PRIMARY KEY,
-    subscription_fee NUMERIC(14,2),          -- per period; NULL for unlimited (per-order)
-    per_order_fee    NUMERIC(14,2),          -- unlimited plan only (Rs. 7/order)
-    setup_fee        NUMERIC(14,2) NOT NULL,
-    is_yearly        BOOLEAN       NOT NULL DEFAULT FALSE
-);
-
-CREATE TABLE knox.clients (
-    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    business_name  TEXT        NOT NULL,
-    contact_person TEXT,
-    phone          TEXT,
-    email          TEXT,
-    plan           knox_plan   NOT NULL REFERENCES knox.plans(plan),
-    status         knox_status NOT NULL DEFAULT 'trial',
-    start_date     DATE        NOT NULL,        -- drives 7-day trial + renewal
-    setup_option   knox_setup_option NOT NULL DEFAULT 'full',
-    on_trial       BOOLEAN     NOT NULL DEFAULT TRUE,
-    notes          TEXT,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Setup fee: one row (full pay) or four installment rows (§16.4).
-CREATE TABLE knox.setup_fee_installments (
-    id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    client_id     BIGINT   NOT NULL REFERENCES knox.clients(id) ON DELETE CASCADE,
-    installment_no SMALLINT NOT NULL CHECK (installment_no BETWEEN 1 AND 4),
-    amount        NUMERIC(14,2) NOT NULL,
-    is_paid       BOOLEAN  NOT NULL DEFAULT FALSE,
-    paid_at       TIMESTAMPTZ,
-    UNIQUE (client_id, installment_no)
-);
-
--- Subscription billing periods; amount editable for unlimited/pay-per-order (§16.4).
-CREATE TABLE knox.subscription_periods (
-    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    client_id   BIGINT   NOT NULL REFERENCES knox.clients(id) ON DELETE CASCADE,
-    period_start DATE    NOT NULL,               -- month or year start
-    amount      NUMERIC(14,2),                   -- NULL = "Not entered" (unlimited plan)
-    is_paid     BOOLEAN  NOT NULL DEFAULT FALSE,
-    paid_at     TIMESTAMPTZ,
-    UNIQUE (client_id, period_start)
-);
-
--- Internal announcement images + text notifications (§16.6)
-CREATE TABLE knox.announcements (
-    id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    image_url TEXT     NOT NULL,
-    position  SMALLINT NOT NULL CHECK (position BETWEEN 1 AND 5),
-    UNIQUE (position)
-);
-
-CREATE TABLE knox.notifications (
-    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title      TEXT        NOT NULL,
-    message    TEXT        NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-SET search_path TO galaxy, public;
--- =====================================================================
---  END OF SCHEMA
--- =====================================================================
+    FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();

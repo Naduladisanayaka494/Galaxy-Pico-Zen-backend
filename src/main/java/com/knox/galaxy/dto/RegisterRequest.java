@@ -1,11 +1,9 @@
 package com.knox.galaxy.dto;
 
-import com.knox.galaxy.model.UserRole;
 import lombok.Data;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 @Data
@@ -24,11 +22,16 @@ public class RegisterRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
+    /** Required, unlike before: this is the login identifier in knox.tenant_users. */
+    @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     private String email;
 
-    @NotNull(message = "Role is required")
-    private UserRole role;
+    // Plain string, not an enum: validity is checked against the tenant's own
+    // roles table at the service layer, not baked into a compile-time Java
+    // enum — a tenant can add/rename roles, so the valid set isn't fixed.
+    @NotBlank(message = "Role is required")
+    private String role;
 
     private String phone;
     private String avatarUrl;
