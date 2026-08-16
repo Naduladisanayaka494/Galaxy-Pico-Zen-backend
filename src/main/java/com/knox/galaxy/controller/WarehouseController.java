@@ -1,51 +1,62 @@
 package com.knox.galaxy.controller;
 
+import com.knox.galaxy.dto.WarehouseRequest;
 import com.knox.galaxy.dto.WarehouseResponse;
-import com.knox.galaxy.model.Warehouse;
-import com.knox.galaxy.repository.WarehouseRepository;
+import com.knox.galaxy.service.WarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Provides read access to warehouses for the tenant UI.
+ * Warehouses for the tenant UI.
  *
- * GET /api/warehouses          – all active warehouses (for Add/Edit Product form)
- * GET /api/warehouses/all      – all warehouses including inactive (for Warehouse management page)
+ * <p>{@code GET /api/warehouses} stays active-only so the Add / Edit Product
+ * form keeps seeing just the warehouses it can assign stock to;
+ * {@code /all} includes deactivated ones for the management page.
  */
 @RestController
 @RequestMapping("/api/warehouses")
 public class WarehouseController {
 
     @Autowired
-    private WarehouseRepository warehouseRepository;
+    private WarehouseService warehouseService;
 
     /** Active warehouses — used by Add/Edit Product form for per-warehouse qty fields. */
     @GetMapping
     public ResponseEntity<List<WarehouseResponse>> listActive() {
-        List<WarehouseResponse> list = warehouseRepository
-                .findAllByIsActiveOrderByNameAsc(true)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(list);
+        return ResponseEntity.ok(warehouseService.list(true));
     }
 
     /** All warehouses including inactive — used by Warehouse management page. */
     @GetMapping("/all")
     public ResponseEntity<List<WarehouseResponse>> listAll() {
-        List<WarehouseResponse> list = warehouseRepository
-                .findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(list);
+        return ResponseEntity.ok(warehouseService.list(false));
     }
 
-    private WarehouseResponse toResponse(Warehouse w) {
-        return new WarehouseResponse(w.getId(), w.getName(), w.getCode(), w.getLocation());
+    @GetMapping("/{id}")
+    public ResponseEntity<WarehouseResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(warehouseService.get(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<WarehouseResponse> create(@Valid @RequestBody WarehouseRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(warehouseService.create(request));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<WarehouseResponse> update(@PathVariable Long id,
+                                                    @Valid @RequestBody WarehouseRequest request) {
+        return ResponseEntity.ok(warehouseService.update(id, request));
+    }
+
+    /** 409 while the warehouse still holds stock — deactivate instead. */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        warehouseService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

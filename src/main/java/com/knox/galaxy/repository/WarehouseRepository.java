@@ -13,4 +13,9 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     /** Returns all active warehouses sorted alphabetically — used by Add/Edit Product form. */
     List<Warehouse> findAllByIsActiveOrderByNameAsc(boolean isActive);
+
+    List<Warehouse> findAllByOrderByNameAsc();
+
+    /** Matches the UNIQUE(code) constraint case-insensitively for a clean 409. */
+    Optional<Warehouse> findByCodeIgnoreCase(String code);
 }

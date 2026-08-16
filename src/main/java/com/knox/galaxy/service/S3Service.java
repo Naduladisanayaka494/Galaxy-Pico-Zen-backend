@@ -54,11 +54,23 @@ public class S3Service {
         }
     }
 
+    /** Key prefix used when no folder is given — the original product-image behaviour. */
+    private static final String DEFAULT_FOLDER = "products";
+
     /**
      * If the input is a base64 encoded data URI, decodes it, uploads it to S3 products folder,
      * and returns the public S3 URL. Otherwise, returns the original input string.
      */
     public String uploadIfBase64(String imageInput) {
+        return uploadIfBase64(imageInput, DEFAULT_FOLDER);
+    }
+
+    /**
+     * As {@link #uploadIfBase64(String)}, but stores the object under {@code folder/}
+     * instead of {@code products/} — so non-product images (business logos, and
+     * later customer or user avatars) don't end up in the product namespace.
+     */
+    public String uploadIfBase64(String imageInput, String folder) {
         if (imageInput == null || !imageInput.startsWith("data:")) {
             return imageInput;
         }
@@ -86,13 +98,13 @@ public class S3Service {
             }
 
             byte[] decodedBytes = Base64.getDecoder().decode(base64Payload.trim());
-            String fileName = "products/image_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString() + extension;
+            String fileName = folder + "/image_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString() + extension;
 
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType(contentType);
             metadata.setContentLength(decodedBytes.length);
 
-            log.info("Uploading product image to S3: {}/{}", bucketName, fileName);
+            log.info("Uploading image to S3: {}/{}", bucketName, fileName);
 
             try (ByteArrayInputStream inputStream = new ByteArrayInputStream(decodedBytes)) {
                 // Upload to S3

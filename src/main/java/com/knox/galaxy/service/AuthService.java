@@ -93,6 +93,14 @@ public class AuthService {
                 throw new DisabledException("Account is disabled");
             }
 
+            // Stamp both rows: the Users screen reads the tenant-local one, and
+            // the directory copy is what platform-side tooling looks at.
+            LocalDateTime now = LocalDateTime.now();
+            localUser.setLastLoginAt(now);
+            userRepository.save(localUser);
+            tenantUser.setLastLoginAt(now);
+            tenantUserRepository.save(tenantUser);
+
             String role = localUser.getRole().getName();
             String jwt = tokenProvider.generateToken(
                     tenantUser.getEmail(), tenant.getId(), localUser.getId(), role);

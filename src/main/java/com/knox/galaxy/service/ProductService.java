@@ -41,6 +41,9 @@ public class ProductService {
     @Autowired
     private S3Service s3Service;
 
+    @Autowired
+    private NotificationService notificationService;
+
     // -------------------------------------------------------------------------
     // LIST
     // -------------------------------------------------------------------------
@@ -121,6 +124,10 @@ public class ProductService {
 
         saveImages(product, req.getImageUrls());
         saveInventory(product, req.getWarehouseQuantities());
+
+        notificationService.raise(NotificationType.product_added,
+                product.getName() + " was added to the catalogue",
+                product.getProductCode(), null, product, null);
 
         return toResponse(product);
     }

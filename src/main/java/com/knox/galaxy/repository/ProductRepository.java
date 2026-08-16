@@ -31,6 +31,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // ---- Paginated list (active-only, no search) ----
     Page<Product> findByIsActive(boolean isActive, Pageable pageable);
 
+    /** How many products reference a category — guards category deletion. */
+    long countByCategoryId(Long categoryId);
+
     /**
      * Total on-hand stock for a product summed across all warehouses.
      * Returns 0 when no inventory rows exist.

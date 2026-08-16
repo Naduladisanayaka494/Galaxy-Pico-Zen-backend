@@ -1,5 +1,6 @@
 package com.knox.galaxy.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -25,6 +26,13 @@ public class ProductResponse {
     private BigDecimal sellingPrice;
     private Integer lowStockThreshold;
 
+    /**
+     * Explicit name: Lombok generates {@code isActive()} for this field, which
+     * Jackson publishes as {@code "active"} — while every frontend interface
+     * reads {@code isActive}, so the flag arrived as undefined. Pinned to match
+     * the rest of the API.
+     */
+    @JsonProperty("isActive")
     private boolean isActive;
     private LocalDate addedDate;
     private LocalDateTime createdAt;

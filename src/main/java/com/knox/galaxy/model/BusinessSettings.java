@@ -14,8 +14,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BusinessSettings {
 
+    /**
+     * The only valid primary key. The tenant schema enforces it with
+     * {@code CHECK (id = 1)}, so every tenant has exactly one settings row.
+     */
+    public static final short SINGLETON_ID = 1;
+
     @Id
-    private Short id = 1;
+    private Short id = SINGLETON_ID;
 
     @Column(name = "business_name", nullable = false)
     private String businessName;
