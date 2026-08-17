@@ -1,2 +1,10 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# Read by Linux tooling, so they must keep LF even when checked out on
+# Windows under core.autocrlf=true. A CRLF .dockerignore leaves a trailing
+# carriage return on every pattern, which stops them matching — and the
+# entries here are what keep .env out of the build context.
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.yml text eol=lf
