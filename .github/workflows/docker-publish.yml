@@ -1,0 +1,60 @@
+# Builds the API image and pushes it to Docker Hub.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   DOCKERHUB_USERNAME  Docker Hub account name — also the image namespace.
+#   DOCKERHUB_TOKEN     Access token from Docker Hub > Account Settings >
+#                       Personal access tokens. Not the account password.
+#
+# Nothing secret is baked into this image: the backend reads its database,
+# JWT and SMTP config from the environment at runtime, so the same published
+# image is safe to promote across environments.
+name: Publish Docker image
+
+on:
+  push:
+    branches: [master, main]
+    tags: ["v*"]
+    # Docs-only commits do not change the image.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: galaxy-backend
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # The deployment target is a standard x86-64 GCP VM. Building only
+          # the one platform that gets used keeps Maven off QEMU emulation,
+          # which is dramatically slower for a JVM build.
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
