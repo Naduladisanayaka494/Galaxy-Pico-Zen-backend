@@ -175,9 +175,9 @@ public class ProductService {
     @Transactional
     public void delete(Long id) {
         Product product = findOrThrow(id);
-        product.setActive(false);
-        product.setUpdatedAt(LocalDateTime.now());
-        productRepository.save(product);
+        inventoryRepository.deleteByProduct(product);
+        productImageRepository.deleteByProduct(product);
+        productRepository.delete(product);
     }
 
     // -------------------------------------------------------------------------
@@ -188,12 +188,11 @@ public class ProductService {
     public void bulkDelete(List<Long> ids) {
         if (ids == null || ids.isEmpty()) return;
         List<Product> products = productRepository.findAllById(ids);
-        LocalDateTime now = LocalDateTime.now();
         for (Product p : products) {
-            p.setActive(false);
-            p.setUpdatedAt(now);
+            inventoryRepository.deleteByProduct(p);
+            productImageRepository.deleteByProduct(p);
         }
-        productRepository.saveAll(products);
+        productRepository.deleteAll(products);
     }
 
     // -------------------------------------------------------------------------
