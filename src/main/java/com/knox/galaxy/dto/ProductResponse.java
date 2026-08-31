@@ -43,4 +43,5 @@ public class ProductResponse {
 
     /** Total on_hand quantity across all warehouses. */
     private int totalStock;
+    private List<String> warehouses;
 }

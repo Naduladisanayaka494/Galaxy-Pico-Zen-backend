@@ -21,7 +21,7 @@ import java.util.Optional;
  * {@link ProductRepository} already uses for its optional filters.
  */
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Order> {
 
     Optional<Order> findByOrderCode(String orderCode);
 

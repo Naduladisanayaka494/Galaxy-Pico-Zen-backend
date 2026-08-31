@@ -276,7 +276,7 @@ public class ProductService {
             inv.setReserved(0);
             rows.add(inv);
         }
-        inventoryRepository.saveAll(rows);
+        inventoryRepository.saveAllAndFlush(rows);
     }
 
     /**
@@ -303,7 +303,7 @@ public class ProductService {
             if (inv.getReserved() == 0) inv.setReserved(0); // keep reserved unchanged
             toSave.add(inv);
         }
-        inventoryRepository.saveAll(toSave);
+        inventoryRepository.saveAllAndFlush(toSave);
     }
 
     /** Map a Product entity (+ its relations) to a ProductResponse DTO. */
@@ -340,6 +340,13 @@ public class ProductService {
         // Total stock across all warehouses
         resp.setTotalStock(productRepository.sumOnHandByProductId(product.getId()));
 
+        List<String> warehouses = inventoryRepository.findByProduct(product).stream()
+                .filter(inv -> inv.getOnHand() > 0)
+                .map(inv -> inv.getWarehouse().getName() + " (" + inv.getOnHand() + ")")
+                .collect(Collectors.toList());
+        resp.setWarehouses(warehouses);
+
         return resp;
     }
 }
+
