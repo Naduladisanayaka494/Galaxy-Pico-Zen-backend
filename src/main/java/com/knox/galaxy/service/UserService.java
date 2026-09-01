@@ -53,7 +53,9 @@ public class UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
+        user.setAvatarUrl(request.getAvatarUrl());
         user.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
 }
+
