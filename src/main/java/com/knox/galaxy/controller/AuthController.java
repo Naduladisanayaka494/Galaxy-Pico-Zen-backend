@@ -1,11 +1,14 @@
 package com.knox.galaxy.controller;
 
 import com.knox.galaxy.config.CookieUtil;
+import com.knox.galaxy.dto.ForgotPasswordRequest;
 import com.knox.galaxy.dto.LoginRequest;
 import com.knox.galaxy.dto.LoginResponse;
 import com.knox.galaxy.dto.RegisterRequest;
+import com.knox.galaxy.dto.ResetPasswordRequest;
 import com.knox.galaxy.model.User;
 import com.knox.galaxy.service.AuthService;
+import com.knox.galaxy.service.PasswordResetService;
 import com.knox.galaxy.service.RefreshTokenService;
 import com.knox.galaxy.tenancy.TenantContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +25,8 @@ import javax.validation.Valid;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,15 +36,18 @@ public class AuthController {
 
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordResetService passwordResetService;
     // Same property RefreshTokenService uses for the DB row's expiry — the cookie's
     // Max-Age must track it exactly, so it's read from the same source, not duplicated.
     private final Duration refreshCookieMaxAge;
 
     public AuthController(AuthService authService,
                           RefreshTokenService refreshTokenService,
+                          PasswordResetService passwordResetService,
                           @Value("${galaxy.refresh-token.expiration-days:30}") long refreshExpirationDays) {
         this.authService = authService;
         this.refreshTokenService = refreshTokenService;
+        this.passwordResetService = passwordResetService;
         this.refreshCookieMaxAge = Duration.ofDays(refreshExpirationDays);
     }
 
@@ -66,6 +74,29 @@ public class AuthController {
         }
         AuthService.LoginResult result = authService.refresh(refreshCookie);
         return withAuthCookies(result);
+    }
+
+    /**
+     * Step 1 of "forgot password": email a single-use reset link. Public and
+     * rate-limited (see RateLimitFilter). The response is intentionally the
+     * same whether or not the address is registered — see PasswordResetService.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.getEmail());
+        return ResponseEntity.ok(Collections.singletonMap(
+                "message", "If that email is registered, a reset link is on its way."));
+    }
+
+    /**
+     * Step 2 of "forgot password": spend the emailed token and set the new
+     * password. Also revokes every existing session for that login.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(Collections.singletonMap(
+                "message", "Your password has been reset. You can now sign in."));
     }
 
     @PostMapping("/logout")

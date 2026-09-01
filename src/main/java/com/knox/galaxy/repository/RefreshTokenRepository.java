@@ -20,6 +20,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     List<RefreshToken> findByFamilyIdAndRevokedAtIsNull(UUID familyId);
 
+    /** Every live session for one login — killed wholesale after a password
+     *  reset so a stolen refresh token can't outlive the credential it rode in on. */
+    List<RefreshToken> findByTenantUserIdAndRevokedAtIsNull(Long tenantUserId);
+
     /** Purges rows nobody will ever need again: naturally expired, or revoked
      * (rotated out / logged out) long enough ago that no audit value remains. */
     @Modifying

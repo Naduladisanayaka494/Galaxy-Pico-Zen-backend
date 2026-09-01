@@ -1,5 +1,6 @@
 package com.knox.galaxy.controller;
 
+import com.knox.galaxy.dto.ChangePasswordRequest;
 import com.knox.galaxy.dto.TenantUserRequest;
 import com.knox.galaxy.dto.TenantUserResponse;
 import com.knox.galaxy.dto.UpdateProfileRequest;
@@ -55,6 +56,18 @@ public class UserController {
         }
         User user = userService.updateProfile(userDetails.getUsername(), request);
         return ResponseEntity.ok(toDto(user));
+    }
+
+    /** Change your own password (Profile screen). 204 on success; 400 if the
+     *  current password doesn't match. */
+    @PutMapping("/me/password")
+    public ResponseEntity<?> changeOwnPassword(@AuthenticationPrincipal UserDetails userDetails,
+                                               @Valid @RequestBody ChangePasswordRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("Not authenticated");
+        }
+        userService.changePassword(userDetails.getUsername(), request);
+        return ResponseEntity.noContent().build();
     }
 
     // ---------------------------------------------------------------------

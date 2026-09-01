@@ -29,7 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final Set<String> PROTECTED_PATHS = Set.of(
-            "/api/auth/login", "/api/auth/refresh", "/api/platform/auth/login");
+            "/api/auth/login", "/api/auth/refresh", "/api/platform/auth/login",
+            // Reset flow: throttled to blunt both address-enumeration probing
+            // and brute-forcing the emailed token.
+            "/api/auth/forgot-password", "/api/auth/reset-password");
     private static final int CAPACITY = 5;
     private static final Duration WINDOW = Duration.ofMinutes(1);
 

@@ -124,6 +124,19 @@ public class RefreshTokenService {
                 .ifPresent(t -> revokeFamily(t.getFamilyId()));
     }
 
+    /** Kill every live session for one login, across all rotation families —
+     *  used after a password reset, where any outstanding session may be the
+     *  attacker's. */
+    @Transactional
+    public void revokeAllForUser(Long tenantUserId) {
+        List<RefreshToken> live = repository.findByTenantUserIdAndRevokedAtIsNull(tenantUserId);
+        LocalDateTime now = LocalDateTime.now();
+        for (RefreshToken t : live) {
+            t.setRevokedAt(now);
+        }
+        repository.saveAll(live);
+    }
+
     public void revokeFamily(UUID familyId) {
         requiresNewTransaction.executeWithoutResult(status -> {
             List<RefreshToken> live = repository.findByFamilyIdAndRevokedAtIsNull(familyId);

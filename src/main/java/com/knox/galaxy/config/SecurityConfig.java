@@ -59,7 +59,8 @@ public class SecurityConfig {
             // was therefore unauthenticated — with tenants that would let anyone
             // create an 'owner' in any tenant, so it is now authenticated and
             // role-gated in AuthController.
-            .antMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
+            .antMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
+                    "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
             .antMatchers("/api/platform/auth/login").permitAll()
             // Everything else under /api/platform is KNOX staff only. Enforced
             // here rather than per-controller so a new platform route cannot
