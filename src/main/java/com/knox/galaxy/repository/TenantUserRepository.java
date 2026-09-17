@@ -17,4 +17,8 @@ public interface TenantUserRepository extends JpaRepository<TenantUser, Long> {
     Optional<TenantUser> findByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    Optional<TenantUser> findByResetToken(String resetToken);
+
+    Optional<TenantUser> findByTenantIdAndLocalUserId(Long tenantId, Long localUserId);
 }

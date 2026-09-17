@@ -37,6 +37,7 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final RoleRepository roleRepository;
+    private final EmailService emailService;
 
     public AuthService(TenantUserRepository tenantUserRepository,
                        TenantRepository tenantRepository,
@@ -44,7 +45,8 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        RefreshTokenService refreshTokenService,
-                       RoleRepository roleRepository) {
+                       RoleRepository roleRepository,
+                       EmailService emailService) {
         this.tenantUserRepository = tenantUserRepository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
@@ -52,6 +54,7 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
         this.refreshTokenService = refreshTokenService;
         this.roleRepository = roleRepository;
+        this.emailService = emailService;
     }
 
     /** Bundles the JSON body with the refresh token, which never appears in JSON — only as an httpOnly cookie. */
@@ -208,5 +211,91 @@ public class AuthService {
         }
 
         return saved;
+    }
+
+    public void forgotPassword(String email) {
+        TenantContext.clear();
+        tenantUserRepository.findByEmailIgnoreCase(email).ifPresent(tenantUser -> {
+            String token = java.util.UUID.randomUUID().toString();
+            tenantUser.setResetToken(token);
+            tenantUser.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
+            tenantUserRepository.save(tenantUser);
+            
+            emailService.sendPasswordResetEmail(email, token);
+        });
+    }
+
+    public void sendPasswordResetLink(Long tenantId, Long localUserId, String customEmail) {
+        TenantContext.clear();
+        tenantUserRepository.findByTenantIdAndLocalUserId(tenantId, localUserId).ifPresent(tenantUser -> {
+            String token = java.util.UUID.randomUUID().toString();
+            tenantUser.setResetToken(token);
+            tenantUser.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
+            tenantUserRepository.save(tenantUser);
+            
+            emailService.sendPasswordResetEmail(customEmail, token);
+        });
+    }
+
+    public void resetPassword(String token, String newPassword) {
+        TenantContext.clear();
+        TenantUser tenantUser = tenantUserRepository.findByResetToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token"));
+
+        if (tenantUser.getResetTokenExpiry() == null || tenantUser.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token");
+        }
+
+        String hashed = passwordEncoder.encode(newPassword);
+        tenantUser.setPasswordHash(hashed);
+        tenantUser.setResetToken(null);
+        tenantUser.setResetTokenExpiry(null);
+        tenantUserRepository.save(tenantUser);
+
+        Tenant tenant = tenantRepository.findById(tenantUser.getTenantId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Tenant not found"));
+
+        TenantContext.setSchema(tenant.getSchemaName());
+        try {
+            User localUser = userRepository.findById(tenantUser.getLocalUserId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Local user not found"));
+            localUser.setPasswordHash(hashed);
+            userRepository.save(localUser);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        // Find local user
+        User localUser = userRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Now we need to verify currentPassword against the tenantUser
+        Long tenantId = TenantContext.requireTenantId();
+        Long localUserId = localUser.getId();
+
+        TenantContext.clear();
+        try {
+            TenantUser tenantUser = tenantUserRepository.findByTenantIdAndLocalUserId(tenantId, localUserId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant user not found"));
+
+            if (!passwordEncoder.matches(currentPassword, tenantUser.getPasswordHash())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect current password");
+            }
+
+            String hashed = passwordEncoder.encode(newPassword);
+            tenantUser.setPasswordHash(hashed);
+            tenantUserRepository.save(tenantUser);
+
+            // Re-bind to update local user
+            Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+            TenantContext.setSchema(tenant.getSchemaName());
+
+            localUser.setPasswordHash(hashed);
+            userRepository.save(localUser);
+        } finally {
+            TenantContext.clear();
+        }
     }
 }

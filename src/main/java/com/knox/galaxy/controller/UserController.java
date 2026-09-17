@@ -3,15 +3,18 @@ package com.knox.galaxy.controller;
 import com.knox.galaxy.dto.TenantUserRequest;
 import com.knox.galaxy.dto.TenantUserResponse;
 import com.knox.galaxy.dto.UpdateProfileRequest;
+import com.knox.galaxy.dto.ChangePasswordRequest;
 import com.knox.galaxy.dto.UserResponseDto;
 import com.knox.galaxy.model.User;
 import com.knox.galaxy.service.TenantUserAdminService;
 import com.knox.galaxy.service.UserService;
+import com.knox.galaxy.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.knox.galaxy.tenancy.TenantContext;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +39,9 @@ public class UserController {
     @Autowired
     private TenantUserAdminService tenantUserAdminService;
 
+    @Autowired
+    private AuthService authService;
+
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
@@ -55,6 +61,34 @@ public class UserController {
         }
         User user = userService.updateProfile(userDetails.getUsername(), request);
         return ResponseEntity.ok(toDto(user));
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal UserDetails userDetails,
+                                               @Valid @RequestBody ChangePasswordRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        authService.changePassword(userDetails.getUsername(), request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/me/password-reset-link")
+    public ResponseEntity<Void> sendPasswordResetLink(@AuthenticationPrincipal UserDetails userDetails,
+                                                      @RequestBody Map<String, String> body) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        User user = userService.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userDetails.getUsername()));
+        
+        Long tenantId = TenantContext.requireTenantId();
+        authService.sendPasswordResetLink(tenantId, user.getId(), email);
+        return ResponseEntity.ok().build();
     }
 
     // ---------------------------------------------------------------------

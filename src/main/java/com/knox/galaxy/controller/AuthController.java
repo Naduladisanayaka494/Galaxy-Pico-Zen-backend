@@ -4,6 +4,8 @@ import com.knox.galaxy.config.CookieUtil;
 import com.knox.galaxy.dto.LoginRequest;
 import com.knox.galaxy.dto.LoginResponse;
 import com.knox.galaxy.dto.RegisterRequest;
+import com.knox.galaxy.dto.ForgotPasswordRequest;
+import com.knox.galaxy.dto.ResetPasswordRequest;
 import com.knox.galaxy.model.User;
 import com.knox.galaxy.service.AuthService;
 import com.knox.galaxy.service.RefreshTokenService;
@@ -95,6 +97,19 @@ public class AuthController {
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
         User savedUser = authService.register(TenantContext.requireTenantId(), registerRequest);
         return ResponseEntity.ok("User registered successfully with ID: " + savedUser.getId());
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        // Always return 200 OK to prevent email enumeration
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 
     private ResponseEntity<LoginResponse> withAuthCookies(AuthService.LoginResult result) {
