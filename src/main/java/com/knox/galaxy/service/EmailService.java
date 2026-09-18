@@ -43,6 +43,43 @@ public class EmailService {
         }
     }
 
+    /**
+     * Sent when an owner or admin adds a team member on the Users screen.
+     *
+     * <p>Distinct from {@link #sendTenantWelcomeEmail}, which greets a whole
+     * new business: this one greets a person joining one that already exists,
+     * and names who they now work under.
+     *
+     * @throws MailException if sending fails — the caller decides what that
+     * means; the account itself is created either way.
+     */
+    public void sendNewUserEmail(String toEmail, String firstName, String businessName,
+                                 String loginEmail, String password) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Your Galaxy account for " + businessName);
+            helper.setText(newUserBody(firstName, businessName, loginEmail, password), false);
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new MailSendException("Failed to send account email to " + toEmail, e);
+        }
+    }
+
+    private String newUserBody(String firstName, String businessName,
+                               String loginEmail, String password) {
+        return "Hi " + firstName + ",\n\n"
+                + "An account has been created for you on " + businessName + "'s Galaxy workspace.\n\n"
+                + "Login page: " + frontendUrl + "\n"
+                + "Email: " + loginEmail + "\n"
+                + "Temporary password: " + password + "\n\n"
+                + "Please log in and change your password from your Profile page as soon as\n"
+                + "possible — whoever created this account can see the password above.\n\n"
+                + "— Galaxy, by KNOX";
+    }
+
     private String body(String businessName, String loginEmail, String password) {
         return "Hi " + businessName + ",\n\n"
                 + "Your Galaxy account has been created. Here are your login details:\n\n"

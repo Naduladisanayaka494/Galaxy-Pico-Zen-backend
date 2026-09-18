@@ -3,10 +3,13 @@ package com.knox.galaxy.service;
 import com.knox.galaxy.dto.TenantUserRequest;
 import com.knox.galaxy.dto.TenantUserResponse;
 import com.knox.galaxy.model.*;
+import com.knox.galaxy.repository.BusinessSettingsRepository;
 import com.knox.galaxy.repository.RoleRepository;
 import com.knox.galaxy.repository.TenantUserRepository;
 import com.knox.galaxy.repository.UserRepository;
 import com.knox.galaxy.tenancy.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +40,8 @@ import java.util.stream.Collectors;
 @Service
 public class TenantUserAdminService {
 
+    private static final Logger log = LoggerFactory.getLogger(TenantUserAdminService.class);
+
     /** The role that must always retain at least one active member. */
     private static final String OWNER_ROLE = "owner";
 
@@ -54,6 +59,12 @@ public class TenantUserAdminService {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private BusinessSettingsRepository businessSettingsRepository;
 
     @Transactional(readOnly = true)
     public List<TenantUserResponse> list() {
@@ -97,7 +108,36 @@ public class TenantUserAdminService {
                 user.getFirstName() + " " + user.getLastName() + " was added",
                 "Role: " + user.getRole().getName());
 
+        sendAccountEmail(user, req.getEmail().trim(), req.getPassword());
+
         return toResponse(user);
+    }
+
+    /**
+     * Mails the new member their login details.
+     *
+     * <p>Never fails the creation: SMTP may not be configured at all (see
+     * galaxy.mail.* in application.properties), and an account that exists but
+     * whose email did not go out is recoverable — the owner can read the
+     * password back to them, or they can use Forgot password. Losing the whole
+     * account to a mail outage is not.
+     *
+     * <p>This is also the only moment the raw password is in hand; everything
+     * stored is a bcrypt hash.
+     */
+    private void sendAccountEmail(User user, String email, String rawPassword) {
+        String businessName = businessSettingsRepository
+                .findById(BusinessSettings.SINGLETON_ID)
+                .map(BusinessSettings::getBusinessName)
+                .filter(name -> name != null && !name.isBlank())
+                .orElse("your team");
+        try {
+            emailService.sendNewUserEmail(email, user.getFirstName(), businessName,
+                    email, rawPassword);
+        } catch (RuntimeException e) {
+            log.warn("User {} was created but the account email to {} could not be sent",
+                    user.getId(), email, e);
+        }
     }
 
     @Transactional
