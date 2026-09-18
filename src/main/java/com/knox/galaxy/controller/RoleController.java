@@ -21,11 +21,13 @@ public class RoleController {
     @Autowired
     private RoleService roleService;
 
+    @PreAuthorize("@perm.view('users')")
     @GetMapping
     public ResponseEntity<List<RoleResponse>> list() {
         return ResponseEntity.ok(roleService.list());
     }
 
+    @PreAuthorize("@perm.view('users')")
     @GetMapping("/{id}/permissions")
     public ResponseEntity<Map<String, AccessLevel>> permissions(@PathVariable Short id) {
         return ResponseEntity.ok(roleService.permissions(id));
@@ -38,8 +40,8 @@ public class RoleController {
      * grant themselves everything, so it carries the same gate as user
      * management.
      */
+    @PreAuthorize("@perm.full('users')")
     @PutMapping("/{id}/permissions")
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<Map<String, AccessLevel>> replacePermissions(
             @PathVariable Short id, @Valid @RequestBody RolePermissionsRequest request) {
         return ResponseEntity.ok(roleService.replacePermissions(id, request));

@@ -6,6 +6,7 @@ import com.knox.galaxy.service.DiscountCodeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -25,18 +26,21 @@ public class DiscountCodeController {
         return ResponseEntity.ok(discountCodeService.list(activeOnly));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @PostMapping
     public ResponseEntity<DiscountCodeResponse> create(
             @Valid @RequestBody DiscountCodeRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(discountCodeService.create(request));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @PutMapping("/{id}")
     public ResponseEntity<DiscountCodeResponse> update(
             @PathVariable Long id, @Valid @RequestBody DiscountCodeRequest request) {
         return ResponseEntity.ok(discountCodeService.update(id, request));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         discountCodeService.delete(id);

@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -31,6 +32,7 @@ public class FinanceController {
     private FinanceService financeService;
 
     /** Defaults to the last 12 months when no window is given. */
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping
     public ResponseEntity<List<FinanceEntryResponse>> list(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -39,6 +41,7 @@ public class FinanceController {
         return ResponseEntity.ok(financeService.list(from, to, kind));
     }
 
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping("/summary")
     public ResponseEntity<FinanceSummaryResponse> summary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -46,6 +49,7 @@ public class FinanceController {
         return ResponseEntity.ok(financeService.summary(from, to));
     }
 
+    @PreAuthorize("@perm.full('reports')")
     @PostMapping
     public ResponseEntity<FinanceEntryResponse> create(
             @Valid @RequestBody FinanceEntryRequest request,
@@ -54,12 +58,14 @@ public class FinanceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(financeService.create(request, username));
     }
 
+    @PreAuthorize("@perm.full('reports')")
     @PutMapping("/{id}")
     public ResponseEntity<FinanceEntryResponse> update(@PathVariable Long id,
                                                        @Valid @RequestBody FinanceEntryRequest request) {
         return ResponseEntity.ok(financeService.update(id, request));
     }
 
+    @PreAuthorize("@perm.full('reports')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         financeService.delete(id);

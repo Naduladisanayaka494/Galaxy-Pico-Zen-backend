@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -31,6 +32,7 @@ public class ProductController {
     // GET /api/products
     // Query params: search (optional), activeOnly (optional), page (0-indexed, default 0), size (default 20)
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.view('item_stock_view')")
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> list(
             @RequestParam(required = false) String search,
@@ -44,6 +46,7 @@ public class ProductController {
     // -------------------------------------------------------------------------
     // GET /api/products/{id}
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.view('item_stock_view')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getById(id));
@@ -52,6 +55,7 @@ public class ProductController {
     // -------------------------------------------------------------------------
     // POST /api/products
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('add_product')")
     @PostMapping
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductRequest request) {
         ProductResponse created = productService.create(request);
@@ -61,6 +65,7 @@ public class ProductController {
     // -------------------------------------------------------------------------
     // PUT /api/products/{id}  (full update)
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('item_stock_edit')")
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> update(@PathVariable Long id,
                                                   @Valid @RequestBody ProductRequest request) {
@@ -70,6 +75,7 @@ public class ProductController {
     // -------------------------------------------------------------------------
     // DELETE /api/products/{id}  (soft-delete)
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('item_stock_edit')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         productService.delete(id);
@@ -79,6 +85,7 @@ public class ProductController {
     // -------------------------------------------------------------------------
     // DELETE /api/products  (bulk soft-delete — ids in request body)
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('item_stock_edit')")
     @DeleteMapping
     public ResponseEntity<Void> bulkDelete(@RequestBody List<Long> ids) {
         productService.bulkDelete(ids);
@@ -89,6 +96,7 @@ public class ProductController {
     // POST /api/products/bulk-delete  (alternative — avoids DELETE-with-body)
     // Body: [1, 2, 3]
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('item_stock_edit')")
     @PostMapping("/bulk-delete")
     public ResponseEntity<Void> bulkDeletePost(@RequestBody List<Long> ids) {
         productService.bulkDelete(ids);
@@ -99,6 +107,7 @@ public class ProductController {
     // PATCH /api/products/{id}/status
     // Body: { "active": true|false }
     // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('item_stock_edit')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<ProductResponse> toggleStatus(
             @PathVariable Long id,

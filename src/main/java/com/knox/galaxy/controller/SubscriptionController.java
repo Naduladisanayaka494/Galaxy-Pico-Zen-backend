@@ -6,6 +6,7 @@ import com.knox.galaxy.dto.SubscriptionResponse;
 import com.knox.galaxy.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,18 +28,21 @@ public class SubscriptionController {
     private SubscriptionService subscriptionService;
 
     /** Current plan, renewal window, outstanding balance and live usage. */
+    @PreAuthorize("@perm.view('billing')")
     @GetMapping
     public ResponseEntity<SubscriptionResponse> get() {
         return ResponseEntity.ok(subscriptionService.get());
     }
 
     /** The plan catalogue, with this tenant's plan flagged. */
+    @PreAuthorize("@perm.view('billing')")
     @GetMapping("/plans")
     public ResponseEntity<List<GalaxyPlanResponse>> plans() {
         return ResponseEntity.ok(subscriptionService.plans());
     }
 
     /** Billed periods, newest first. Empty when the tenant has no client record. */
+    @PreAuthorize("@perm.view('billing')")
     @GetMapping("/payments")
     public ResponseEntity<List<SubscriptionPaymentResponse>> payments() {
         return ResponseEntity.ok(subscriptionService.payments());

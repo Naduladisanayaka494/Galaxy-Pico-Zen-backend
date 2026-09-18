@@ -5,6 +5,7 @@ import com.knox.galaxy.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping("/sales")
     public ResponseEntity<SalesReportResponse> sales(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -30,11 +32,13 @@ public class ReportController {
     }
 
     /** Current holdings — a point-in-time view, so it takes no date window. */
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping("/stock")
     public ResponseEntity<StockReportResponse> stock() {
         return ResponseEntity.ok(reportService.stock());
     }
 
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping("/customers")
     public ResponseEntity<CustomerReportResponse> customers(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -42,6 +46,7 @@ public class ReportController {
         return ResponseEntity.ok(reportService.customers(from, to));
     }
 
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping("/users")
     public ResponseEntity<UserReportResponse> users(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -49,6 +54,7 @@ public class ReportController {
         return ResponseEntity.ok(reportService.users(from, to));
     }
 
+    @PreAuthorize("@perm.view('reports')")
     @GetMapping("/finance")
     public ResponseEntity<FinanceReportResponse> finance(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

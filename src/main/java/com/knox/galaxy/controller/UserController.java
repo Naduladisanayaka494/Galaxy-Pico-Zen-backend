@@ -5,7 +5,9 @@ import com.knox.galaxy.dto.TenantUserRequest;
 import com.knox.galaxy.dto.TenantUserResponse;
 import com.knox.galaxy.dto.UpdateProfileRequest;
 import com.knox.galaxy.dto.UserResponseDto;
+import com.knox.galaxy.model.AccessLevel;
 import com.knox.galaxy.model.User;
+import com.knox.galaxy.security.PermissionService;
 import com.knox.galaxy.service.TenantUserAdminService;
 import com.knox.galaxy.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,9 @@ public class UserController {
     @Autowired
     private TenantUserAdminService tenantUserAdminService;
 
+    @Autowired
+    private PermissionService permissionService;
+
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
@@ -45,6 +50,19 @@ public class UserController {
         User user = userService.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userDetails.getUsername()));
         return ResponseEntity.ok(toDto(user));
+    }
+
+    /**
+     * What the logged-in user is allowed to do, as feature key -> access level.
+     *
+     * <p>The UI gates its nav and its buttons on this. It is only ever a
+     * convenience: every endpoint enforces the same matrix itself through
+     * {@link com.knox.galaxy.security.PermissionService}, so hiding a button
+     * is cosmetic and a hand-made request still gets a 403.
+     */
+    @GetMapping("/me/permissions")
+    public ResponseEntity<Map<String, AccessLevel>> currentPermissions() {
+        return ResponseEntity.ok(permissionService.currentMatrix());
     }
 
     /** Name and phone only — see UpdateProfileRequest for why email isn't editable here. */
@@ -80,34 +98,36 @@ public class UserController {
     // account or delete colleagues.
     // ---------------------------------------------------------------------
 
+    @PreAuthorize("@perm.view('users')")
     @GetMapping
     public ResponseEntity<List<TenantUserResponse>> list() {
         return ResponseEntity.ok(tenantUserAdminService.list());
     }
 
+    @PreAuthorize("@perm.view('users')")
     @GetMapping("/{id}")
     public ResponseEntity<TenantUserResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(tenantUserAdminService.get(id));
     }
 
     /** Creates the tenant profile and the knox.tenant_users login together. */
+    @PreAuthorize("@perm.full('users')")
     @PostMapping
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<TenantUserResponse> create(@Valid @RequestBody TenantUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(tenantUserAdminService.create(request));
     }
 
     /** Omit {@code password} to leave the existing credential untouched. */
+    @PreAuthorize("@perm.full('users')")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<TenantUserResponse> update(@PathVariable Long id,
                                                      @Valid @RequestBody TenantUserRequest request) {
         return ResponseEntity.ok(tenantUserAdminService.update(id, request));
     }
 
     /** Body: { "active": true|false } — mirrors the products status endpoint. */
+    @PreAuthorize("@perm.full('users')")
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<TenantUserResponse> setStatus(@PathVariable Long id,
                                                         @RequestBody Map<String, Boolean> body) {
         Boolean active = body.get("active");
@@ -117,8 +137,8 @@ public class UserController {
         return ResponseEntity.ok(tenantUserAdminService.setStatus(id, active));
     }
 
+    @PreAuthorize("@perm.full('users')")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         tenantUserAdminService.delete(id);
         return ResponseEntity.noContent().build();

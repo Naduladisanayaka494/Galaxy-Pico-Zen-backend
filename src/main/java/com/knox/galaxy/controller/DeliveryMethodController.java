@@ -6,6 +6,7 @@ import com.knox.galaxy.service.DeliveryMethodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -25,18 +26,21 @@ public class DeliveryMethodController {
         return ResponseEntity.ok(deliveryMethodService.list(activeOnly));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @PostMapping
     public ResponseEntity<DeliveryMethodResponse> create(
             @Valid @RequestBody DeliveryMethodRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(deliveryMethodService.create(request));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @PutMapping("/{id}")
     public ResponseEntity<DeliveryMethodResponse> update(
             @PathVariable Long id, @Valid @RequestBody DeliveryMethodRequest request) {
         return ResponseEntity.ok(deliveryMethodService.update(id, request));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         deliveryMethodService.delete(id);

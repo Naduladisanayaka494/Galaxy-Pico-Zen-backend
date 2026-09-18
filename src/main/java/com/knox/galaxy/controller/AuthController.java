@@ -121,8 +121,8 @@ public class AuthController {
      * an open endpoint would let anyone mint an 'owner' inside any tenant.
      * The first user of a brand-new tenant is created by provisioning, not here.
      */
+    @PreAuthorize("@perm.full('users')")
     @PostMapping("/register")
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
         User savedUser = authService.register(TenantContext.requireTenantId(), registerRequest);
         return ResponseEntity.ok("User registered successfully with ID: " + savedUser.getId());

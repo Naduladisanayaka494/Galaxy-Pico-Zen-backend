@@ -6,6 +6,7 @@ import com.knox.galaxy.service.PaymentMethodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -25,18 +26,21 @@ public class PaymentMethodController {
         return ResponseEntity.ok(paymentMethodService.list(activeOnly));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @PostMapping
     public ResponseEntity<PaymentMethodResponse> create(
             @Valid @RequestBody PaymentMethodRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentMethodService.create(request));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @PutMapping("/{id}")
     public ResponseEntity<PaymentMethodResponse> update(
             @PathVariable Long id, @Valid @RequestBody PaymentMethodRequest request) {
         return ResponseEntity.ok(paymentMethodService.update(id, request));
     }
 
+    @PreAuthorize("@perm.full('settings_business')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         paymentMethodService.delete(id);

@@ -6,6 +6,7 @@ import com.knox.galaxy.service.WarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -26,27 +27,32 @@ public class WarehouseController {
     private WarehouseService warehouseService;
 
     /** Active warehouses — used by Add/Edit Product form for per-warehouse qty fields. */
+    @PreAuthorize("@perm.anyView('warehouses','item_stock_view','add_product')")
     @GetMapping
     public ResponseEntity<List<WarehouseResponse>> listActive() {
         return ResponseEntity.ok(warehouseService.list(true));
     }
 
     /** All warehouses including inactive — used by Warehouse management page. */
+    @PreAuthorize("@perm.anyView('warehouses','item_stock_view','add_product')")
     @GetMapping("/all")
     public ResponseEntity<List<WarehouseResponse>> listAll() {
         return ResponseEntity.ok(warehouseService.list(false));
     }
 
+    @PreAuthorize("@perm.anyView('warehouses','item_stock_view','add_product')")
     @GetMapping("/{id}")
     public ResponseEntity<WarehouseResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(warehouseService.get(id));
     }
 
+    @PreAuthorize("@perm.full('warehouses')")
     @PostMapping
     public ResponseEntity<WarehouseResponse> create(@Valid @RequestBody WarehouseRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(warehouseService.create(request));
     }
 
+    @PreAuthorize("@perm.full('warehouses')")
     @PutMapping("/{id}")
     public ResponseEntity<WarehouseResponse> update(@PathVariable Long id,
                                                     @Valid @RequestBody WarehouseRequest request) {
@@ -54,6 +60,7 @@ public class WarehouseController {
     }
 
     /** 409 while the warehouse still holds stock — deactivate instead. */
+    @PreAuthorize("@perm.full('warehouses')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         warehouseService.delete(id);

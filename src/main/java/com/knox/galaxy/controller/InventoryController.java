@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -24,6 +25,7 @@ public class InventoryController {
     private InventoryService inventoryService;
 
     /** Both filters are optional and combine. */
+    @PreAuthorize("@perm.view('item_stock_view')")
     @GetMapping
     public ResponseEntity<List<InventoryResponse>> list(
             @RequestParam(required = false) Long warehouseId,
@@ -32,6 +34,7 @@ public class InventoryController {
     }
 
     /** Applies the movement and records it in one transaction. */
+    @PreAuthorize("@perm.anyFull('add_product','warehouses')")
     @PostMapping("/adjust")
     public ResponseEntity<StockMovementResponse> adjust(
             @Valid @RequestBody StockAdjustmentRequest request,
@@ -41,6 +44,7 @@ public class InventoryController {
                 .body(inventoryService.adjust(request, username));
     }
 
+    @PreAuthorize("@perm.view('item_stock_view')")
     @GetMapping("/movements")
     public ResponseEntity<Page<StockMovementResponse>> movements(
             @RequestParam(required = false) Long warehouseId,

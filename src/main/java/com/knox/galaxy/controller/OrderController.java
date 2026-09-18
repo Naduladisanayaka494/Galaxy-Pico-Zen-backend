@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -29,6 +30,7 @@ public class OrderController {
     private OrderService orderService;
 
     /** Paged, newest first. Both filters are optional. */
+    @PreAuthorize("@perm.view('orders_view')")
     @GetMapping
     public ResponseEntity<Page<OrderResponse>> list(
             @RequestParam(required = false) OrderStatus status,
@@ -39,11 +41,13 @@ public class OrderController {
     }
 
     /** Full order including its line items. */
+    @PreAuthorize("@perm.view('orders_view')")
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.get(id));
     }
 
+    @PreAuthorize("@perm.full('place_order')")
     @PostMapping
     public ResponseEntity<OrderResponse> create(@Valid @RequestBody OrderRequest request,
                                                 @AuthenticationPrincipal UserDetails userDetails) {
@@ -53,6 +57,7 @@ public class OrderController {
     }
 
     /** A reason is required for cancelled / returned / refunded. */
+    @PreAuthorize("@perm.full('orders_status')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<OrderResponse> updateStatus(
             @PathVariable Long id,
@@ -62,6 +67,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateStatus(id, request, username));
     }
 
+    @PreAuthorize("@perm.view('orders_view')")
     @GetMapping("/{id}/history")
     public ResponseEntity<List<OrderStatusHistoryResponse>> history(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.history(id));

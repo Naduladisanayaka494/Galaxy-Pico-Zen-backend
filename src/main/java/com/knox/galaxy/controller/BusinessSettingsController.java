@@ -5,7 +5,6 @@ import com.knox.galaxy.dto.BusinessSettingsResponse;
 import com.knox.galaxy.service.BusinessSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -31,9 +30,13 @@ public class BusinessSettingsController {
         return ResponseEntity.ok(businessSettingsService.get());
     }
 
-    /** owner/admin only — matches the seeded settings_business permission. */
+    /**
+     * Open to any authenticated user, and filtered per field by
+     * {@link com.knox.galaxy.service.BusinessSettingsService#update} - the four
+     * settings_* features in the role matrix do not divide along the same line
+     * as this one row.
+     */
     @PutMapping
-    @PreAuthorize("hasAnyRole('owner','admin')")
     public ResponseEntity<BusinessSettingsResponse> update(
             @Valid @RequestBody BusinessSettingsRequest request) {
         return ResponseEntity.ok(businessSettingsService.update(request));
