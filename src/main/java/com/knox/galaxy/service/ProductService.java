@@ -158,6 +158,7 @@ public class ProductService {
 
         // Replace images: delete old, insert new
         productImageRepository.deleteByProduct(product);
+        productImageRepository.flush();
         saveImages(product, req.getImageUrls());
 
         // Update warehouse quantities if provided
@@ -177,6 +178,7 @@ public class ProductService {
         Product product = findOrThrow(id);
         inventoryRepository.deleteByProduct(product);
         productImageRepository.deleteByProduct(product);
+        productImageRepository.flush();
         productRepository.delete(product);
     }
 
