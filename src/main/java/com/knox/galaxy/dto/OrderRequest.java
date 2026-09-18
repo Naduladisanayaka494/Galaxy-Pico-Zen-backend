@@ -45,6 +45,21 @@ public class OrderRequest {
     @DecimalMin(value = "0.00", message = "Delivery charge must be >= 0")
     private BigDecimal deliveryChargeOverride;
 
+    /**
+     * Where the order is going, for delivery methods that price by region.
+     *
+     * <p>Sent by Place Order from the built-in Sri Lanka town list (Province →
+     * District → Town), not looked up from {@code customer.city}: the tenant's
+     * own {@code cities} table need not contain the chosen town. Only the one
+     * matching the method's scope is consulted, and an unknown region just
+     * falls back to the method's default charge.
+     */
+    @Size(max = 150)
+    private String deliveryProvince;
+
+    @Size(max = 150)
+    private String deliveryDistrict;
+
     @Data
     public static class OrderItemRequest {
 

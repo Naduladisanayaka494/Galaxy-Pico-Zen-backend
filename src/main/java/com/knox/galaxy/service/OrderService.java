@@ -65,6 +65,7 @@ public class OrderService {
     @Autowired private WarehouseRepository warehouseRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private DeliveryMethodRepository deliveryMethodRepository;
+    @Autowired private DeliveryMethodRateRepository deliveryMethodRateRepository;
     @Autowired private PaymentMethodRepository paymentMethodRepository;
     @Autowired private DiscountCodeRepository discountCodeRepository;
     @Autowired private NotificationService notificationService;
@@ -135,13 +136,15 @@ public class OrderService {
         DeliveryMethod delivery = resolveDeliveryMethod(req.getDeliveryMethodId());
         order.setDeliveryMethod(delivery);
         order.setPaymentMethod(resolvePaymentMethod(req.getPaymentMethodId()));
-        order.setDeliveryCharge(resolveDeliveryCharge(delivery, req.getDeliveryChargeOverride()));
 
-        // Items first — the discount is a percentage of the subtotal they produce.
+        // Items first — both the discount and a percentage delivery charge are
+        // worked out from the subtotal they produce.
         List<OrderItem> items = buildItems(req.getItems());
         BigDecimal subtotal = items.stream()
                 .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setDeliveryCharge(resolveDeliveryCharge(delivery, req, subtotal));
 
         DiscountCode discount = resolveDiscountCode(req.getDiscountCodeId());
         order.setDiscountCode(discount);
@@ -438,11 +441,54 @@ public class OrderService {
         return code;
     }
 
-    private BigDecimal resolveDeliveryCharge(DeliveryMethod method, BigDecimal override) {
-        if (override != null) {
-            return override;
+    /**
+     * What this order pays for delivery.
+     *
+     * <p>An explicit override still wins outright — that is the courier
+     * quoting something different. Otherwise the method decides: its region
+     * rate for the order's province or district if it prices that way and has
+     * a row for that region, else its own default charge; and that number is
+     * read either as LKR or as a percent of the items subtotal.
+     *
+     * <p>The region comes from the request rather than from
+     * {@code customer.city}: the Place Order form picks a town from the
+     * built-in Sri Lanka list, which is not necessarily a row in the tenant's
+     * {@code cities} table. A missing or unrecognised region simply falls back
+     * to the default charge.
+     */
+    private BigDecimal resolveDeliveryCharge(DeliveryMethod method, OrderRequest req,
+                                             BigDecimal subtotal) {
+        if (req.getDeliveryChargeOverride() != null) {
+            return req.getDeliveryChargeOverride();
         }
-        return method == null ? BigDecimal.ZERO : method.getCharge();
+        if (method == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal value = regionRateFor(method, req).orElse(method.getCharge());
+        if (method.getChargeKind() != DeliveryChargeKind.percentage) {
+            return value;
+        }
+        return subtotal.multiply(value)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    /** Empty unless the method prices by region and has a row for this order's. */
+    private Optional<BigDecimal> regionRateFor(DeliveryMethod method, OrderRequest req) {
+        DeliveryRegionType scope = method.getRateScope();
+        if (scope == null || scope == DeliveryRegionType.flat) {
+            return Optional.empty();
+        }
+        String region = scope == DeliveryRegionType.district
+                ? req.getDeliveryDistrict()
+                : req.getDeliveryProvince();
+        if (region == null || region.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        return deliveryMethodRateRepository
+                .findByDeliveryMethodIdAndRegionTypeAndRegionNameIgnoreCase(
+                        method.getId(), scope, region.trim())
+                .map(DeliveryMethodRate::getCharge);
     }
 
     /** Never more than the subtotal — the DB requires discount_amount >= 0. */
