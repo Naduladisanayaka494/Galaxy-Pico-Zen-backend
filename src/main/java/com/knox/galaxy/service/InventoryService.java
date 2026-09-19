@@ -62,15 +62,38 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public Page<StockMovementResponse> movements(Long warehouseId, Long productId, int page, int size) {
+        return movements(warehouseId, productId, null, page, size);
+    }
+
+    /**
+     * The movement log, newest first.
+     *
+     * @param type optional — {@code transfer} is what the Warehouses page's
+     *             transfers panel asks for. Filtering here rather than in the
+     *             client matters because refills and initial stock would
+     *             otherwise fill the first page and hide the transfers.
+     */
+    @Transactional(readOnly = true)
+    public Page<StockMovementResponse> movements(Long warehouseId, Long productId,
+                                                 StockMovementType type, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
         Page<StockMovement> found;
         if (productId != null) {
-            found = stockMovementRepository.findByProductIdOrderByCreatedAtDesc(productId, pageable);
+            found = type == null
+                    ? stockMovementRepository.findByProductIdOrderByCreatedAtDesc(productId, pageable)
+                    : stockMovementRepository
+                            .findByTypeAndProductIdOrderByCreatedAtDesc(type, productId, pageable);
         } else if (warehouseId != null) {
-            found = stockMovementRepository
-                    .findByWarehouseFromIdOrWarehouseToIdOrderByCreatedAtDesc(warehouseId, warehouseId, pageable);
+            found = type == null
+                    ? stockMovementRepository.findByWarehouseFromIdOrWarehouseToIdOrderByCreatedAtDesc(
+                            warehouseId, warehouseId, pageable)
+                    : stockMovementRepository
+                            .findByTypeAndWarehouseFromIdOrTypeAndWarehouseToIdOrderByCreatedAtDesc(
+                                    type, warehouseId, type, warehouseId, pageable);
         } else {
-            found = stockMovementRepository.findAllByOrderByCreatedAtDesc(pageable);
+            found = type == null
+                    ? stockMovementRepository.findAllByOrderByCreatedAtDesc(pageable)
+                    : stockMovementRepository.findByTypeOrderByCreatedAtDesc(type, pageable);
         }
         return found.map(this::toResponse);
     }

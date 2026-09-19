@@ -3,6 +3,7 @@ package com.knox.galaxy.controller;
 import com.knox.galaxy.dto.InventoryResponse;
 import com.knox.galaxy.dto.StockAdjustmentRequest;
 import com.knox.galaxy.dto.StockMovementResponse;
+import com.knox.galaxy.model.StockMovementType;
 import com.knox.galaxy.service.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -49,8 +50,9 @@ public class InventoryController {
     public ResponseEntity<Page<StockMovementResponse>> movements(
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) StockMovementType type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(inventoryService.movements(warehouseId, productId, page, size));
+        return ResponseEntity.ok(inventoryService.movements(warehouseId, productId, type, page, size));
     }
 }
