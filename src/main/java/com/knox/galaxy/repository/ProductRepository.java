@@ -40,4 +40,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query("SELECT COALESCE(SUM(i.onHand), 0) FROM Inventory i WHERE i.product.id = :productId")
     int sumOnHandByProductId(@Param("productId") Long productId);
+
+    /**
+     * Units of this product actually sold, all time. Returns 0 when it has
+     * never sold.
+     *
+     * <p>Delivered lines only, which is what "sold" means everywhere else in
+     * this codebase — see ReportRepository's dead-stock and top-products
+     * queries. An order still in flight has not earned anything yet, and a
+     * cancelled, returned or refunded one never will, so counting either here
+     * would put a different number on Item Stock than the Stock Report shows
+     * for the same product.
+     *
+     * <p>Native, like every other status comparison here: {@code status} is a
+     * PostgreSQL enum type, and a JPQL enum literal binds as a varchar against
+     * it, which Postgres rejects. A string literal in SQL casts cleanly.
+     */
+    @Query(value = "SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi "
+            + "JOIN orders o ON o.id = oi.order_id "
+            + "WHERE oi.product_id = :productId AND o.status = 'delivered'",
+            nativeQuery = true)
+    int sumDeliveredQuantityByProductId(@Param("productId") Long productId);
 }

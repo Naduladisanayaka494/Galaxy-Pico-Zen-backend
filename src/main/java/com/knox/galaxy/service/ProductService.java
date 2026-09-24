@@ -346,6 +346,9 @@ public class ProductService {
         // Total stock across all warehouses
         resp.setTotalStock(productRepository.sumOnHandByProductId(product.getId()));
 
+        // Units sold, for the Item Stock table's SALES QUANTITY column
+        resp.setSalesQuantity(productRepository.sumDeliveredQuantityByProductId(product.getId()));
+
         List<String> warehouses = inventoryRepository.findByProduct(product).stream()
                 .filter(inv -> inv.getOnHand() > 0)
                 .map(inv -> inv.getWarehouse().getName() + " (" + inv.getOnHand() + ")")

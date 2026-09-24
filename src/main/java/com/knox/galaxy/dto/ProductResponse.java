@@ -43,5 +43,8 @@ public class ProductResponse {
 
     /** Total on_hand quantity across all warehouses. */
     private int totalStock;
+
+    /** Units sold all time — delivered order lines only. 0 if never sold. */
+    private int salesQuantity;
     private List<String> warehouses;
 }
