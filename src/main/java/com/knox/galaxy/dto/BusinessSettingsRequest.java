@@ -10,7 +10,7 @@ import javax.validation.constraints.*;
  * General Settings page sends the whole form back on save.
  *
  * <p>{@code logoUrl} accepts either an existing URL or a base64 data URI; the
- * service uploads the latter to S3 the same way product images are handled.
+ * service stores the latter on disk the same way product images are handled.
  */
 @Data
 public class BusinessSettingsRequest {

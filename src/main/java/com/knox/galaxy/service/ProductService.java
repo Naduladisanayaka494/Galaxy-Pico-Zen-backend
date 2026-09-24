@@ -39,7 +39,7 @@ public class ProductService {
     private WarehouseRepository warehouseRepository;
 
     @Autowired
-    private S3Service s3Service;
+    private StorageService storageService;
 
     @Autowired
     private PlanLimitService planLimitService;
@@ -250,8 +250,8 @@ public class ProductService {
             String url = urls.get(i);
             if (url == null || url.isBlank()) continue;
             
-            // Upload to S3 if base64 encoded
-            String processedUrl = s3Service.uploadIfBase64(url);
+            // Store on disk if base64 encoded; an existing URL passes through.
+            String processedUrl = storageService.uploadIfBase64(url);
             
             ProductImage img = new ProductImage();
             img.setProduct(product);

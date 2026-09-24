@@ -1,5 +1,6 @@
 package com.knox.galaxy.config;
 
+import com.knox.galaxy.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -61,6 +62,13 @@ public class SecurityConfig {
             // role-gated in AuthController.
             .antMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
                     "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+            // Uploaded product images and business logos. Open because they are
+            // loaded by <img src> — a tag that carries no Authorization header
+            // and cannot be given one. Their URLs hold a UUID, so they are
+            // unguessable rather than secret; nothing sensitive belongs here.
+            // No method restriction needed: a resource handler answers GET and
+            // HEAD and rejects everything else with a 405 on its own.
+            .antMatchers(StorageService.PUBLIC_PATH + "/**").permitAll()
             .antMatchers("/api/platform/auth/login").permitAll()
             // Everything else under /api/platform is KNOX staff only. Enforced
             // here rather than per-controller so a new platform route cannot

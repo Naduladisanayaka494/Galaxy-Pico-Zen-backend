@@ -23,14 +23,14 @@ import java.time.LocalDateTime;
 @Service
 public class BusinessSettingsService {
 
-    /** S3 key prefix for uploaded business logos. */
+    /** Storage folder for uploaded business logos. */
     private static final String LOGO_FOLDER = "logos";
 
     @Autowired
     private BusinessSettingsRepository businessSettingsRepository;
 
     @Autowired
-    private S3Service s3Service;
+    private StorageService storageService;
 
     @Autowired
     private PermissionService permissionService;
@@ -63,7 +63,7 @@ public class BusinessSettingsService {
             settings.setAddress(req.getAddress());
             settings.setPhone(req.getPhone());
             // Accepts an existing URL unchanged, or uploads a fresh base64 data URI.
-            settings.setLogoUrl(s3Service.uploadIfBase64(req.getLogoUrl(), LOGO_FOLDER));
+            settings.setLogoUrl(storageService.uploadIfBase64(req.getLogoUrl(), LOGO_FOLDER));
             settings.setLowStockThreshold(req.getLowStockThreshold());
         }
 

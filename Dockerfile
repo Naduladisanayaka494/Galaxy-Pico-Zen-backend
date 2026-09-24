@@ -28,9 +28,19 @@ RUN mvn -B -Dmaven.test.skip=true package
 FROM eclipse-temurin:17-jre AS runtime
 WORKDIR /app
 
-# Unprivileged runtime user. Nothing in the app writes to disk (uploads go to
-# S3, not the container filesystem), so it needs no writable paths of its own.
+# Unprivileged runtime user.
 RUN groupadd --system galaxy && useradd --system --gid galaxy --no-create-home galaxy
+
+# Image uploads land here (STORAGE_DIR), on the named volume compose mounts at
+# this path. Created in the image and owned by galaxy on purpose: Docker
+# initialises a fresh named volume from the image's directory, ownership
+# included, so a mount point missing here would appear root-owned and the app —
+# which checks the directory is writable at boot — would refuse to start.
+#
+# No VOLUME instruction: which volume gets mounted here is docker-compose.yml's
+# decision, and declaring one would also make every plain `docker run` leave an
+# anonymous volume behind.
+RUN install -d -o galaxy -g galaxy /var/lib/galaxy/storage
 
 # Left owned by root and world-readable: the app only ever reads it, and a
 # chown here would duplicate the whole 50MB jar into a second layer.
