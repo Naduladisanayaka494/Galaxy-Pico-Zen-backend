@@ -72,7 +72,7 @@ public class UserService {
      *
      * <p>The authoritative credential is {@code knox.tenant_users.password_hash}
      * (what login checks); the tenant-local {@code users.password_hash} is kept
-     * in step behind it. Safe as one transaction â€” the tenant schema is already
+     * in step behind it. Safe as one transaction - the tenant schema is already
      * bound for the whole request and {@link TenantUser} is schema-qualified to
      * {@code knox}, so no {@code TenantContext} switch is needed (same reasoning
      * as {@code TenantUserAdminService}).

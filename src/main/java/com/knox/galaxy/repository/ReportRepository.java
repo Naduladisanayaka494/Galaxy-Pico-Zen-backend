@@ -13,15 +13,15 @@ import java.util.List;
  *
  * <p>Native SQL rather than JPQL: these are GROUP BY roll-ups using
  * {@code date_trunc}, which JPQL expresses badly. Table names are deliberately
- * unqualified â€” the connection's search_path is already set to the caller's
+ * unqualified - the connection's search_path is already set to the caller's
  * tenant schema, so one statement reads the right rows for every tenant.
  *
  * <p><strong>Revenue counts delivered orders only.</strong> Cancelled, returned
  * and refunded orders contribute nothing, and in-flight orders aren't money yet.
- * Every query here takes explicit bounds â€” none binds a null.
+ * Every query here takes explicit bounds - none binds a null.
  *
  * <p>Two Hibernate quirks shape how this SQL is written, and both fail only at
- * execution time â€” nothing here is checked at compile or startup:
+ * execution time - nothing here is checked at compile or startup:
  * <ul>
  *   <li><strong>Every selected column carries an explicit alias.</strong>
  *       Hibernate auto-discovers column names for native queries and rejects
@@ -61,7 +61,7 @@ public interface ReportRepository extends Repository<Order, Long> {
             nativeQuery = true)
     List<Object[]> salesByMonth(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
-    /** [status, count] â€” drives the status breakdown. */
+    /** [status, count] - drives the status breakdown. */
     @Query(value =
             "SELECT CAST(o.status AS text) AS status, COUNT(*) AS order_count FROM orders o "
             + "WHERE o.ordered_at >= :from AND o.ordered_at < :to "
@@ -69,7 +69,7 @@ public interface ReportRepository extends Repository<Order, Long> {
             nativeQuery = true)
     List<Object[]> orderCountsByStatus(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
-    /** [month, cancelled, returned] per month â€” the lost-orders trend. */
+    /** [month, cancelled, returned] per month - the lost-orders trend. */
     @Query(value =
             "SELECT CAST(date_trunc('month', o.ordered_at) AS date) AS month, "
             + "  COUNT(*) FILTER (WHERE o.status = 'cancelled') AS cancelled, "
@@ -130,7 +130,7 @@ public interface ReportRepository extends Repository<Order, Long> {
             nativeQuery = true)
     List<Object[]> ordersByCity(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
-    /** [customerId, name, phone, city, orderCount, spend] â€” biggest spenders first. */
+    /** [customerId, name, phone, city, orderCount, spend] - biggest spenders first. */
     @Query(value =
             "SELECT c.id, c.name, c.phone, COALESCE(ci.name, '') AS city, "
             + "  COUNT(DISTINCT o.id) AS order_count, "

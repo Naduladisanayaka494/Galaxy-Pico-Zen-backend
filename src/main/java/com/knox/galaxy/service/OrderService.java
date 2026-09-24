@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * <h2>Why orders don't write stock_movements</h2>
  * The {@code stock_movement_type} enum is only initial_stock / refill /
  * transfer, and the table's CHECK requires a destination warehouse on every
- * row â€” a sale has neither a matching type nor a destination. Orders therefore
+ * row - a sale has neither a matching type nor a destination. Orders therefore
  * move stock through {@code inventory.reserved}, which is what that column
  * exists for, and leave {@code stock_movements} to warehouse operations.
  *
@@ -51,7 +51,7 @@ public class OrderService {
     private enum StockState {
         /** Held for the order but still physically present. */
         RESERVED,
-        /** Gone â€” shipped to the customer. */
+        /** Gone - shipped to the customer. */
         CONSUMED,
         /** Not held at all. */
         RELEASED
@@ -145,7 +145,7 @@ public class OrderService {
         order.setDeliveryMethod(delivery);
         order.setPaymentMethod(resolvePaymentMethod(req.getPaymentMethodId()));
 
-        // Items first â€” both the discount and a percentage delivery charge are
+        // Items first - both the discount and a percentage delivery charge are
         // worked out from the subtotal they produce.
         List<OrderItem> items = buildItems(req.getItems());
         BigDecimal subtotal = items.stream()
@@ -281,7 +281,7 @@ public class OrderService {
     /**
      * Adjusts {@code reserved} across the product's warehouses.
      *
-     * <p>Reserving refuses to exceed what is physically on hand â€” the schema's
+     * <p>Reserving refuses to exceed what is physically on hand - the schema's
      * {@code CHECK (reserved <= on_hand)} would otherwise fail as a raw 500.
      */
     private void shiftReserved(OrderItem item, int delta) {
@@ -315,7 +315,7 @@ public class OrderService {
             if (remaining > 0) {
                 // Reservations were altered behind this order's back. Nothing to
                 // undo, so log rather than fail a status change on stale bookkeeping.
-                log.warn("Could not release {} reserved unit(s) of product {} â€” reservations no longer match",
+                log.warn("Could not release {} reserved unit(s) of product {} - reservations no longer match",
                         remaining, item.getProduct().getId());
             }
         }
@@ -452,7 +452,7 @@ public class OrderService {
     /**
      * What this order pays for delivery.
      *
-     * <p>An explicit override still wins outright â€” that is the courier
+     * <p>An explicit override still wins outright - that is the courier
      * quoting something different. Otherwise the method decides: its region
      * rate for the order's province or district if it prices that way and has
      * a row for that region, else its own default charge; and that number is
@@ -499,7 +499,7 @@ public class OrderService {
                 .map(DeliveryMethodRate::getCharge);
     }
 
-    /** Never more than the subtotal â€” the DB requires discount_amount >= 0. */
+    /** Never more than the subtotal - the DB requires discount_amount >= 0. */
     private BigDecimal discountAmountFor(DiscountCode code, BigDecimal subtotal) {
         if (code == null) {
             return BigDecimal.ZERO;

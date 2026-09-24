@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * money</strong>. Cancelled and returned orders appear in counts and in the
  * lost-orders views, but never in revenue, cost or profit.
  *
- * <p>Windows are half-open â€” {@code [from, to)} â€” so a month boundary can't
+ * <p>Windows are half-open - {@code [from, to)} - so a month boundary can't
  * double-count an order that landed exactly at midnight.
  */
 @Service
@@ -33,7 +33,7 @@ public class ReportService {
     private static final int DEFAULT_WINDOW_MONTHS = 12;
     private static final int RECENT_ORDER_COUNT = 5;
 
-    /** Statuses that still need work â€” the Overview's "open orders" figure. */
+    /** Statuses that still need work - the Overview's "open orders" figure. */
     private static final List<OrderStatus> OPEN_STATUSES = Arrays.asList(
             OrderStatus.processing, OrderStatus.ready_to_ship, OrderStatus.delivering);
 
@@ -131,7 +131,7 @@ public class ReportService {
                     onHand, purchasePrice, sellingPrice, threshold,
                     rowPurchase, rowSelling, rowSelling.subtract(rowPurchase),
                     unitsSold, isLow,
-                    // Dead stock is sitting inventory that has never sold â€”
+                    // Dead stock is sitting inventory that has never sold -
                     // an empty shelf isn't dead, it's just empty.
                     onHand > 0 && unitsSold == 0));
         }
@@ -180,7 +180,7 @@ public class ReportService {
         LocalDate endExclusive = endOrDefault(to);
 
         // Commission settings live on the User row, so they're applied here
-        // rather than in SQL â€” the shape differs per method.
+        // rather than in SQL - the shape differs per method.
         Map<Long, User> staff = userRepository.findAll().stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
 
