@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,14 +26,14 @@ import java.util.stream.Collectors;
  * <h2>Why orders don't write stock_movements</h2>
  * The {@code stock_movement_type} enum is only initial_stock / refill /
  * transfer, and the table's CHECK requires a destination warehouse on every
- * row — a sale has neither a matching type nor a destination. Orders therefore
+ * row â€” a sale has neither a matching type nor a destination. Orders therefore
  * move stock through {@code inventory.reserved}, which is what that column
  * exists for, and leave {@code stock_movements} to warehouse operations.
  *
  * <h2>Stock lifecycle</h2>
  * Each status maps to one of three stock states, and a transition undoes the
  * old state then applies the new one. That single rule covers every path,
- * including delivered → returned (stock comes back) and cancelled → processing
+ * including delivered â†’ returned (stock comes back) and cancelled â†’ processing
  * (stock is reserved again).
  *
  * <h2>Known limitation</h2>
@@ -50,7 +51,7 @@ public class OrderService {
     private enum StockState {
         /** Held for the order but still physically present. */
         RESERVED,
-        /** Gone — shipped to the customer. */
+        /** Gone â€” shipped to the customer. */
         CONSUMED,
         /** Not held at all. */
         RELEASED
@@ -69,6 +70,7 @@ public class OrderService {
     @Autowired private PaymentMethodRepository paymentMethodRepository;
     @Autowired private DiscountCodeRepository discountCodeRepository;
     @Autowired private NotificationService notificationService;
+    @Autowired private PlanLimitService planLimitService;
 
     // ------------------------------------------------------------------ reads
 
@@ -119,6 +121,12 @@ public class OrderService {
 
     @Transactional
     public OrderResponse create(OrderRequest req, String actingUsername) {
+        // Enforce monthly order cap for the current plan
+        LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
+        long ordersThisMonth = orderRepository.countByOrderedAtBetween(
+                monthStart.atStartOfDay(),
+                monthStart.plusMonths(1).atStartOfDay().minusNanos(1));
+        planLimitService.requireOrderSlot(ordersThisMonth);
         Customer customer = resolveCustomer(req);
         User actor = actingUsername == null
                 ? null
@@ -137,7 +145,7 @@ public class OrderService {
         order.setDeliveryMethod(delivery);
         order.setPaymentMethod(resolvePaymentMethod(req.getPaymentMethodId()));
 
-        // Items first — both the discount and a percentage delivery charge are
+        // Items first â€” both the discount and a percentage delivery charge are
         // worked out from the subtotal they produce.
         List<OrderItem> items = buildItems(req.getItems());
         BigDecimal subtotal = items.stream()
@@ -161,7 +169,7 @@ public class OrderService {
 
         notificationService.raise(NotificationType.new_order,
                 "New order " + order.getOrderCode(),
-                customer.getName() + " · " + items.size() + " item(s)",
+                customer.getName() + " Â· " + items.size() + " item(s)",
                 order, null, null);
 
         return get(order.getId());
@@ -170,7 +178,7 @@ public class OrderService {
     /**
      * Moves the order to a new status and reconciles stock with it.
      *
-     * <p>Cancelling, returning or refunding needs a reason (§8.4); it is written
+     * <p>Cancelling, returning or refunding needs a reason (Â§8.4); it is written
      * to both the order and the history row.
      */
     @Transactional
@@ -273,7 +281,7 @@ public class OrderService {
     /**
      * Adjusts {@code reserved} across the product's warehouses.
      *
-     * <p>Reserving refuses to exceed what is physically on hand — the schema's
+     * <p>Reserving refuses to exceed what is physically on hand â€” the schema's
      * {@code CHECK (reserved <= on_hand)} would otherwise fail as a raw 500.
      */
     private void shiftReserved(OrderItem item, int delta) {
@@ -307,7 +315,7 @@ public class OrderService {
             if (remaining > 0) {
                 // Reservations were altered behind this order's back. Nothing to
                 // undo, so log rather than fail a status change on stale bookkeeping.
-                log.warn("Could not release {} reserved unit(s) of product {} — reservations no longer match",
+                log.warn("Could not release {} reserved unit(s) of product {} â€” reservations no longer match",
                         remaining, item.getProduct().getId());
             }
         }
@@ -389,7 +397,7 @@ public class OrderService {
             OrderItem item = new OrderItem();
             item.setProduct(product);
             item.setQuantity(line.getQuantity());
-            // Price override is per-order (§9.1); cost always comes from the product.
+            // Price override is per-order (Â§9.1); cost always comes from the product.
             item.setUnitPrice(line.getUnitPrice() != null
                     ? line.getUnitPrice()
                     : product.getSellingPrice());
@@ -400,7 +408,7 @@ public class OrderService {
     }
 
     /**
-     * Order codes are ORD-001, ORD-002, … Derived from the current count and
+     * Order codes are ORD-001, ORD-002, â€¦ Derived from the current count and
      * bumped on collision, which covers rows deleted out of the middle.
      */
     private String nextOrderCode() {
@@ -444,7 +452,7 @@ public class OrderService {
     /**
      * What this order pays for delivery.
      *
-     * <p>An explicit override still wins outright — that is the courier
+     * <p>An explicit override still wins outright â€” that is the courier
      * quoting something different. Otherwise the method decides: its region
      * rate for the order's province or district if it prices that way and has
      * a row for that region, else its own default charge; and that number is
@@ -491,7 +499,7 @@ public class OrderService {
                 .map(DeliveryMethodRate::getCharge);
     }
 
-    /** Never more than the subtotal — the DB requires discount_amount >= 0. */
+    /** Never more than the subtotal â€” the DB requires discount_amount >= 0. */
     private BigDecimal discountAmountFor(DiscountCode code, BigDecimal subtotal) {
         if (code == null) {
             return BigDecimal.ZERO;
@@ -574,3 +582,4 @@ public class OrderService {
                 h.getChangedAt());
     }
 }
+
