@@ -1,4 +1,4 @@
-package com.knox.galaxy.service;
+﻿package com.knox.galaxy.service;
 
 import com.knox.galaxy.dto.ChangePasswordRequest;
 import com.knox.galaxy.dto.UpdateProfileRequest;
@@ -27,6 +27,8 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PlanLimitService planLimitService;
 
     @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
@@ -40,6 +42,7 @@ public class UserService {
      */
     @Transactional
     public User registerUser(User user) {
+        planLimitService.requireUserSlot(userRepository.count());
         if (userRepository.existsByUsernameIgnoreCase(user.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -69,7 +72,7 @@ public class UserService {
      *
      * <p>The authoritative credential is {@code knox.tenant_users.password_hash}
      * (what login checks); the tenant-local {@code users.password_hash} is kept
-     * in step behind it. Safe as one transaction — the tenant schema is already
+     * in step behind it. Safe as one transaction â€” the tenant schema is already
      * bound for the whole request and {@link TenantUser} is schema-qualified to
      * {@code knox}, so no {@code TenantContext} switch is needed (same reasoning
      * as {@code TenantUserAdminService}).
@@ -112,4 +115,5 @@ public class UserService {
         userRepository.save(user);
     }
 }
+
 

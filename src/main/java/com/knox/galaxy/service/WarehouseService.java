@@ -1,4 +1,4 @@
-package com.knox.galaxy.service;
+﻿package com.knox.galaxy.service;
 
 import com.knox.galaxy.dto.WarehouseRequest;
 import com.knox.galaxy.dto.WarehouseResponse;
@@ -24,6 +24,9 @@ public class WarehouseService {
     @Autowired
     private InventoryRepository inventoryRepository;
 
+    @Autowired
+    private PlanLimitService planLimitService;
+
     @Transactional(readOnly = true)
     public List<WarehouseResponse> list(boolean activeOnly) {
         List<Warehouse> warehouses = activeOnly
@@ -39,6 +42,7 @@ public class WarehouseService {
 
     @Transactional
     public WarehouseResponse create(WarehouseRequest req) {
+        planLimitService.requireWarehouseSlot(warehouseRepository.count());
         requireCodeAvailable(req.getCode(), null);
         Warehouse warehouse = new Warehouse();
         apply(warehouse, req);
@@ -55,7 +59,7 @@ public class WarehouseService {
 
     /**
      * Inventory rows cascade on delete, so removing a warehouse that still
-     * holds stock would silently destroy those counts. Blocked — deactivating
+     * holds stock would silently destroy those counts. Blocked â€” deactivating
      * is the reversible way to take a warehouse out of circulation.
      */
     @Transactional
@@ -107,3 +111,4 @@ public class WarehouseService {
                 onHand, inventoryRepository.countByWarehouse(w), fill);
     }
 }
+

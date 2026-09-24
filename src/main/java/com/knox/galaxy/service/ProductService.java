@@ -1,4 +1,4 @@
-package com.knox.galaxy.service;
+﻿package com.knox.galaxy.service;
 
 import com.knox.galaxy.dto.*;
 import com.knox.galaxy.model.*;
@@ -40,6 +40,9 @@ public class ProductService {
 
     @Autowired
     private S3Service s3Service;
+
+    @Autowired
+    private PlanLimitService planLimitService;
 
     @Autowired
     private NotificationService notificationService;
@@ -97,6 +100,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse create(ProductRequest req) {
+        planLimitService.requireProductSlot(productRepository.count());
         // Validate product code uniqueness
         if (productRepository.existsByProductCodeIgnoreCase(req.getProductCode())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -107,7 +111,7 @@ public class ProductService {
         // Map<Long, Integer> wqMap = req.getWarehouseQuantities();
         // if (wqMap == null || wqMap.values().stream().noneMatch(q -> q != null && q > 0)) {
         //     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-        //             "Total quantity is 0 — please add stock to at least one warehouse.");
+        //             "Total quantity is 0 â€” please add stock to at least one warehouse.");
         // }
 
         // Default low-stock threshold
@@ -261,7 +265,7 @@ public class ProductService {
 
     /**
      * Create Inventory rows for each warehouse in the map.
-     * Used on product creation — existing rows (if any) are deleted first.
+     * Used on product creation â€” existing rows (if any) are deleted first.
      */
     private void saveInventory(Product product, Map<Long, Integer> warehouseQuantities) {
         if (warehouseQuantities == null || warehouseQuantities.isEmpty()) return;
@@ -283,7 +287,7 @@ public class ProductService {
 
     /**
      * Update existing Inventory rows without resetting others.
-     * Used on product update — only the provided warehouses are touched.
+     * Used on product update â€” only the provided warehouses are touched.
      */
     private void updateInventory(Product product, Map<Long, Integer> warehouseQuantities) {
         // Load existing rows into a map keyed by warehouse id
@@ -351,4 +355,5 @@ public class ProductService {
         return resp;
     }
 }
+
 
