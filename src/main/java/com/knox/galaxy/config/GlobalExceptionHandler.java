@@ -21,7 +21,7 @@ import java.util.Map;
  * Maps exceptions to status codes.
  *
  * <p>Without this, anything the code throws to reject bad input surfaces as a
- * 500 â€” a duplicate username or a malformed period key reads to the caller as
+ * 500 - a duplicate username or a malformed period key reads to the caller as
  * "the server crashed" and to us as a false alarm in the logs. Only genuinely
  * unexpected failures should be 5xx.
  */
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.CONFLICT, "That record already exists");
     }
 
-    /** No tenant bound where one was required â€” a routing bug, not the caller's fault. */
+    /** No tenant bound where one was required - a routing bug, not the caller's fault. */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> illegalState(IllegalStateException e) {
         log.error("Illegal state", e);

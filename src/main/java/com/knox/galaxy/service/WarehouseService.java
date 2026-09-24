@@ -59,7 +59,7 @@ public class WarehouseService {
 
     /**
      * Inventory rows cascade on delete, so removing a warehouse that still
-     * holds stock would silently destroy those counts. Blocked â€” deactivating
+     * holds stock would silently destroy those counts. Blocked - deactivating
      * is the reversible way to take a warehouse out of circulation.
      */
     @Transactional
