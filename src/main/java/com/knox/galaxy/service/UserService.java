@@ -1,4 +1,4 @@
-﻿package com.knox.galaxy.service;
+package com.knox.galaxy.service;
 
 import com.knox.galaxy.dto.ChangePasswordRequest;
 import com.knox.galaxy.dto.UpdateProfileRequest;

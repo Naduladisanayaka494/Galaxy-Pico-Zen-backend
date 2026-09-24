@@ -1,4 +1,4 @@
-﻿package com.knox.galaxy.repository;
+package com.knox.galaxy.repository;
 
 import com.knox.galaxy.model.Order;
 import org.springframework.data.jpa.repository.Query;

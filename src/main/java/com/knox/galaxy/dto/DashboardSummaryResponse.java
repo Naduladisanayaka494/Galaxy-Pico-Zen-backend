@@ -1,4 +1,4 @@
-﻿package com.knox.galaxy.dto;
+package com.knox.galaxy.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
