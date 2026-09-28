@@ -51,4 +51,9 @@ public class OrderResponse {
 
     /** Null on list responses, populated on the single-order fetch. */
     private List<OrderItemResponse> items;
+
+    private String firstProductName;
+    private BigDecimal purchasePrice;
+    private BigDecimal profit;
+    private String customerCity;
 }

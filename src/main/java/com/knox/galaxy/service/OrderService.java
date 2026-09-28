@@ -549,21 +549,28 @@ public class OrderService {
 
         Customer c = o.getCustomer();
         User actor = o.getPlacedBy();
-        return new OrderResponse(
-                o.getId(), o.getOrderCode(), o.getStatus(), o.getOrderedAt(),
-                c == null ? null : c.getId(),
-                c == null ? null : c.getName(),
-                c == null ? null : c.getPhone(),
-                c == null ? null : c.getAddress(),
-                actor == null ? null : actor.getFirstName() + " " + actor.getLastName(),
-                o.getDeliveryMethod() == null ? null : o.getDeliveryMethod().getId(),
-                o.getDeliveryMethod() == null ? null : o.getDeliveryMethod().getName(),
-                o.getPaymentMethod() == null ? null : o.getPaymentMethod().getId(),
-                o.getPaymentMethod() == null ? null : o.getPaymentMethod().getName(),
-                o.getDiscountCode() == null ? null : o.getDiscountCode().getId(),
-                o.getDiscountCode() == null ? null : o.getDiscountCode().getCode(),
-                subtotal, o.getDeliveryCharge(), o.getDiscountAmount(), total,
-                items.size(), o.getStatusReason(), null);
+        BigDecimal purchasePrice = items.stream()
+                  .map(i -> i.getPurchasePrice() != null ? i.getPurchasePrice().multiply(BigDecimal.valueOf(i.getQuantity())) : BigDecimal.ZERO)
+                  .reduce(BigDecimal.ZERO, BigDecimal::add);
+          BigDecimal profit = subtotal.subtract(purchasePrice);
+          String firstProductName = items.isEmpty() ? null : items.get(0).getProduct().getName();
+          String customerCity = c == null || c.getAddress() == null ? null : (c.getAddress().contains(",") ? c.getAddress().substring(0, c.getAddress().indexOf(",")) : c.getAddress());
+
+          return new OrderResponse(
+                  o.getId(), o.getOrderCode(), o.getStatus(), o.getOrderedAt(),
+                  c == null ? null : c.getId(),
+                  c == null ? null : c.getName(),
+                  c == null ? null : c.getPhone(),
+                  c == null ? null : c.getAddress(),
+                  actor == null ? null : actor.getFirstName() + " " + actor.getLastName(),
+                  o.getDeliveryMethod() == null ? null : o.getDeliveryMethod().getId(),
+                  o.getDeliveryMethod() == null ? null : o.getDeliveryMethod().getName(),
+                  o.getPaymentMethod() == null ? null : o.getPaymentMethod().getId(),
+                  o.getPaymentMethod() == null ? null : o.getPaymentMethod().getName(),
+                  o.getDiscountCode() == null ? null : o.getDiscountCode().getId(),
+                  o.getDiscountCode() == null ? null : o.getDiscountCode().getCode(),
+                  subtotal, o.getDeliveryCharge(), o.getDiscountAmount(), total,
+                  items.stream().mapToInt(com.knox.galaxy.model.OrderItem::getQuantity).sum(), o.getStatusReason(), null, firstProductName, purchasePrice, profit, customerCity);
     }
 
     private OrderItemResponse toResponse(OrderItem i) {
