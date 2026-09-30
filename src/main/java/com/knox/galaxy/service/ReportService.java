@@ -155,9 +155,17 @@ public class ReportService {
 
         List<CustomerReportResponse.CustomerTotal> customers =
                 reportRepository.customerTotals(start.atStartOfDay(), endExclusive.atStartOfDay()).stream()
-                        .map(row -> new CustomerReportResponse.CustomerTotal(
+                        .map(row -> {
+                            String lastOrderRaw = row[8] == null ? null : row[8].toString();
+                            String lastOrderDate = null;
+                            if (lastOrderRaw != null && lastOrderRaw.length() >= 10) {
+                                lastOrderDate = lastOrderRaw.substring(0, 10);
+                            }
+                            return new CustomerReportResponse.CustomerTotal(
                                 ((Number) row[0]).longValue(), (String) row[1], (String) row[2],
-                                (String) row[3], ((Number) row[4]).longValue(), decimal(row, 5)))
+                                (String) row[3], ((Number) row[4]).longValue(), decimal(row, 5),
+                                (String) row[6], (String) row[7], lastOrderDate, (String) row[9]);
+                        })
                         .collect(Collectors.toList());
 
         long returning = customers.stream().filter(c -> c.getOrders() > 1).count();
