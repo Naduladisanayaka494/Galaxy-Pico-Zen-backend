@@ -41,6 +41,14 @@ public class ProductResponse {
     /** Ordered list of images (position 1..n). Empty if none stored. */
     private List<ProductImageDto> images;
 
+    /**
+     * The product this one was copied from, or null for an original.
+     *
+     * <p>Id only, no name: reading the id off a lazy proxy costs no query,
+     * where the name would cost one per row on every product list.
+     */
+    private Long parentProductId;
+
     /** Total on_hand quantity across all warehouses. */
     private int totalStock;
 

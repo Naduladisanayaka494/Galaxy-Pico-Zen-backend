@@ -63,6 +63,20 @@ public class ProductController {
     }
 
     // -------------------------------------------------------------------------
+    // POST /api/products/{id}/copy
+    //
+    // Duplicates a product as "<name> copy N" with its own code and price, and
+    // no stock. Gated on add_product rather than item_stock_edit: it creates a
+    // catalogue entry, so it is a create, and it counts against the plan's
+    // product limit like any other.
+    // -------------------------------------------------------------------------
+    @PreAuthorize("@perm.full('add_product')")
+    @PostMapping("/{id}/copy")
+    public ResponseEntity<ProductResponse> copy(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.copy(id));
+    }
+
+    // -------------------------------------------------------------------------
     // PUT /api/products/{id}  (full update)
     // -------------------------------------------------------------------------
     @PreAuthorize("@perm.full('item_stock_edit')")

@@ -17,6 +17,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsByProductCodeIgnoreCase(String productCode);
 
+    /** Used when naming a copy, to find the first free "<name> copy N". */
+    boolean existsByNameIgnoreCase(String name);
+
     // ---- Paginated search (all products) ----
     Page<Product> findByNameContainingIgnoreCaseOrProductCodeContainingIgnoreCase(
             String name, String code, Pageable pageable);

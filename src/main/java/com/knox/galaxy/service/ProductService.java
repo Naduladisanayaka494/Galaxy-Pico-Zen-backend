@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,22 @@ final class ProductConstants {
 
 @Service
 public class ProductService {
+
+    /**
+     * Ceiling on "<name> copy N". High enough never to be reached in practice,
+     * and present only so a naming clash cannot spin the search forever.
+     */
+    private static final int MAX_COPIES = 99;
+
+    /**
+     * Date on the copy's provenance note. Fixed to English rather than the
+     * server's locale so the line reads the same whoever's machine wrote it.
+     */
+    private static final DateTimeFormatter COPY_DATE =
+            DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
+
+    /** Opens the provenance line, and is what identifies it again on a re-copy. */
+    private static final String COPY_NOTE_PREFIX = "Copied from ";
 
     @Autowired
     private ProductRepository productRepository;
@@ -134,6 +151,129 @@ public class ProductService {
                 product.getProductCode(), null, product, null);
 
         return toResponse(product);
+    }
+
+    // -------------------------------------------------------------------------
+    // COPY
+    // -------------------------------------------------------------------------
+
+    /**
+     * Duplicates a product as a separate catalogue entry — "Test" becomes
+     * "Test copy 1" — so a batch bought at a different price can carry that
+     * price on its own row instead of overwriting the original's.
+     *
+     * <p><strong>Stock is deliberately not copied.</strong> The copy starts at
+     * zero in every warehouse and you refill it at the new price. Copying the
+     * stock too would double the quantity the business believes it owns, which
+     * is the one mistake this feature could make that money depends on.
+     *
+     * <p>Images are shared by URL rather than re-uploaded: the file on disk is
+     * identical, and nothing in the app deletes an image file when a product
+     * goes, so pointing two rows at one file is safe.
+     *
+     * <p>The copy records the original in {@code parentProduct} — a column that
+     * has been in the schema since V1, indexed and unused. Copying a copy links
+     * to the same original rather than chaining, so every sibling of a product
+     * is one query away.
+     */
+    @Transactional
+    public ProductResponse copy(Long id) {
+        Product source = findOrThrow(id);
+        planLimitService.requireProductSlot(productRepository.count());
+
+        Product copy = new Product();
+        copy.setName(nextCopyName(source.getName()));
+        copy.setProductCode(nextCopyCode(source.getProductCode()));
+        copy.setDescription(describeCopy(source));
+        copy.setCategory(source.getCategory());
+        copy.setParentProduct(source.getParentProduct() != null ? source.getParentProduct() : source);
+        copy.setPurchasePrice(source.getPurchasePrice());
+        copy.setSellingPrice(source.getSellingPrice());
+        copy.setLowStockThreshold(source.getLowStockThreshold());
+        copy.setActive(source.isActive());
+        copy.setAddedDate(LocalDate.now());
+        copy.setCreatedAt(LocalDateTime.now());
+        copy.setUpdatedAt(LocalDateTime.now());
+        copy = productRepository.save(copy);
+
+        copyImages(source, copy);
+
+        notificationService.raise(NotificationType.product_added,
+                copy.getName() + " was copied from " + source.getName(),
+                copy.getProductCode(), null, copy, null);
+
+        return toResponse(copy);
+    }
+
+    /**
+     * The copy's description: the original's text, then a line recording what
+     * it was copied from and when.
+     *
+     * <p>Without it nothing on the product says it is a copy — the name says
+     * "copy 1" and {@code addedDate} says today, but neither survives a rename,
+     * and neither names the original. This does both, in a field people
+     * already read.
+     *
+     * <p>Any previous provenance line is stripped before the new one is added,
+     * so copying a copy leaves one line naming its immediate source rather than
+     * a growing stack of them.
+     */
+    private String describeCopy(Product source) {
+        String note = COPY_NOTE_PREFIX + source.getName()
+                + " (" + source.getProductCode() + ") on " + LocalDate.now().format(COPY_DATE);
+
+        String existing = source.getDescription() == null ? ""
+                : source.getDescription()
+                        .replaceAll("(?m)^" + COPY_NOTE_PREFIX + ".*$", "")
+                        .trim();
+
+        return existing.isEmpty() ? note : existing + "\n\n" + note;
+    }
+
+    /**
+     * "Test" and "Test copy 2" both lead to "Test copy 3" once two copies
+     * exist — the suffix is stripped first, so copying a copy never produces
+     * "Test copy 2 copy 1".
+     */
+    private String nextCopyName(String sourceName) {
+        String base = sourceName.replaceAll("(?i)\\s+copy\\s+\\d+$", "").trim();
+        for (int n = 1; n <= MAX_COPIES; n++) {
+            String candidate = base + " copy " + n;
+            if (!productRepository.existsByNameIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "'" + base + "' already has " + MAX_COPIES + " copies");
+    }
+
+    /** Product codes are unique, so the copy needs its own: ABC123 -> ABC123-C1. */
+    private String nextCopyCode(String sourceCode) {
+        String base = sourceCode.replaceAll("(?i)-C\\d+$", "");
+        for (int n = 1; n <= MAX_COPIES; n++) {
+            String candidate = base + "-C" + n;
+            if (!productRepository.existsByProductCodeIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Product code '" + base + "' has no free copy suffix left");
+    }
+
+    private void copyImages(Product source, Product copy) {
+        List<ProductImage> originals = productImageRepository.findByProductOrderByPosition(source);
+        if (originals.isEmpty()) return;
+
+        List<ProductImage> copies = new ArrayList<>();
+        for (ProductImage original : originals) {
+            ProductImage img = new ProductImage();
+            img.setProduct(copy);
+            img.setUrl(original.getUrl());
+            img.setPosition(original.getPosition());
+            img.setDefault(original.isDefault());
+            copies.add(img);
+        }
+        productImageRepository.saveAll(copies);
     }
 
     // -------------------------------------------------------------------------
@@ -326,6 +466,9 @@ public class ProductService {
         resp.setAddedDate(product.getAddedDate());
         resp.setCreatedAt(product.getCreatedAt());
         resp.setUpdatedAt(product.getUpdatedAt());
+        // Straight off the lazy proxy — an id needs no query to read.
+        resp.setParentProductId(
+                product.getParentProduct() == null ? null : product.getParentProduct().getId());
 
 
 
