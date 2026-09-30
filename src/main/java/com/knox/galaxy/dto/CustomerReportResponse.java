@@ -43,5 +43,9 @@ public class CustomerReportResponse {
         private String city;
         private long orders;
         private BigDecimal spend;
+        private String email;
+        private String address;
+        private String lastOrder;
+        private String productsBought;
     }
 }

@@ -130,16 +130,24 @@ public interface ReportRepository extends Repository<Order, Long> {
             nativeQuery = true)
     List<Object[]> ordersByCity(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
-    /** [customerId, name, phone, city, orderCount, spend] - biggest spenders first. */
+    /**
+     * [customerId, name, phone, city, orderCount, spend, email, address, lastOrderDate, productsBought]
+     * biggest spenders first.
+     */
     @Query(value =
             "SELECT c.id, c.name, c.phone, COALESCE(ci.name, '') AS city, "
             + "  COUNT(DISTINCT o.id) AS order_count, "
-            + "  COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.unit_price * oi.quantity END), 0) AS spend "
+            + "  COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.unit_price * oi.quantity END), 0) AS spend, "
+            + "  c.email, "
+            + "  c.address, "
+            + "  MAX(o.ordered_at) AS last_order, "
+            + "  STRING_AGG(DISTINCT p.name, ', ' ORDER BY p.name) AS products_bought "
             + "FROM customers c "
             + "LEFT JOIN cities ci ON ci.id = c.city_id "
             + "LEFT JOIN orders o ON o.customer_id = c.id AND o.ordered_at >= :from AND o.ordered_at < :to "
-            + "LEFT JOIN order_items oi ON oi.order_id = o.id "
-            + "GROUP BY c.id, c.name, c.phone, ci.name ORDER BY 6 DESC, c.name",
+            + "LEFT JOIN order_items oi ON oi.order_id = o.id AND o.status = 'delivered' "
+            + "LEFT JOIN products p ON p.id = oi.product_id "
+            + "GROUP BY c.id, c.name, c.phone, ci.name, c.email, c.address ORDER BY 6 DESC, c.name",
             nativeQuery = true)
     List<Object[]> customerTotals(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
