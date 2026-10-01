@@ -44,6 +44,7 @@ public class ReportService {
     @Autowired private OrderRepository orderRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private OrderService orderService;
+    @Autowired private com.knox.galaxy.security.PermissionService permissionService;
 
     // ------------------------------------------------------------------ sales
 
@@ -347,7 +348,7 @@ public class ReportService {
                         })
                         .collect(Collectors.toList());
 
-        return new DashboardSummaryResponse(
+        DashboardSummaryResponse summary = new DashboardSummaryResponse(
                 revenueThisMonth, revenueLastMonth, change,
                 number(current, 3),
                 customerRepository.count(),
@@ -356,7 +357,44 @@ public class ReportService {
                 number(alerts, 1),
                 openOrders,
                 trend, recent, topProducts, stockAlerts);
+
+        if (!permissionService.view("reports")) {
+            redactRevenue(summary);
+        }
+        return summary;
     }
+
+    /**
+     * Strips the money from the dashboard for a role that cannot open Reports.
+     *
+     * <p>Every Reports endpoint is gated on {@code reports}, but the Overview
+     * screen is reachable by every role by design — and it was serving the same
+     * revenue figures to all of them. A role with {@code reports = none} (the
+     * seeded sales, stock_keeper and delivery roles) could read the month's
+     * revenue and its twelve-month trend from the dashboard while being refused
+     * {@code /api/reports/sales}.
+     *
+     * <p>Filtering the fields rather than gating the endpoint keeps the screen
+     * reachable, which is the reason it was left open in the first place. Same
+     * approach BusinessSettingsService takes for per-field settings access.
+     *
+     * <p>What stays: order and customer counts, stock alerts, the open-order
+     * queue, and top products by <em>quantity</em>. Quantity sold is already on
+     * the Item Stock table behind {@code item_stock_view}, so withholding it
+     * here would protect nothing; the per-product revenue beside it goes.
+     */
+    private void redactRevenue(DashboardSummaryResponse summary) {
+        summary.setRevenueThisMonth(null);
+        summary.setRevenueLastMonth(null);
+        summary.setRevenueChangePercent(null);
+        // Empty rather than null: the client charts this straight away, and an
+        // empty series draws an empty chart where a null throws.
+        summary.setRevenueTrend(Collections.emptyList());
+        if (summary.getTopProducts() != null) {
+            summary.getTopProducts().forEach(p -> p.setRevenue(null));
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private LocalDate startOrDefault(LocalDate from) {
