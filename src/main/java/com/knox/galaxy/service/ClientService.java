@@ -7,6 +7,7 @@ import com.knox.galaxy.repository.ClientRepository;
 import com.knox.galaxy.repository.KnoxPlanCatalogueRepository;
 import com.knox.galaxy.repository.SetupFeeInstallmentRepository;
 import com.knox.galaxy.repository.SubscriptionPeriodRepository;
+import com.knox.galaxy.repository.SubscriptionRepository;
 import com.knox.galaxy.repository.TenantRepository;
 import com.knox.galaxy.tenancy.ProvisionTenantCommand;
 import com.knox.galaxy.tenancy.TenantContext;
@@ -45,6 +46,7 @@ public class ClientService {
     private final SubscriptionPeriodRepository periodRepository;
     private final KnoxPlanCatalogueRepository planRepository;
     private final TenantRepository tenantRepository;
+    private final SubscriptionRepository subscriptionRepository;
     private final TenantProvisioningService tenantProvisioningService;
     private final EmailService emailService;
 
@@ -53,6 +55,7 @@ public class ClientService {
                          SubscriptionPeriodRepository periodRepository,
                          KnoxPlanCatalogueRepository planRepository,
                          TenantRepository tenantRepository,
+                         SubscriptionRepository subscriptionRepository,
                          TenantProvisioningService tenantProvisioningService,
                          EmailService emailService) {
         this.clientRepository = clientRepository;
@@ -60,6 +63,7 @@ public class ClientService {
         this.periodRepository = periodRepository;
         this.planRepository = planRepository;
         this.tenantRepository = tenantRepository;
+        this.subscriptionRepository = subscriptionRepository;
         this.tenantProvisioningService = tenantProvisioningService;
         this.emailService = emailService;
     }
@@ -164,6 +168,7 @@ public class ClientService {
         command.setSlug(slug);
         command.setBusinessName(client.getBusinessName());
         command.setClientId(client.getId());
+        command.setPlan(BillingPlan.fromKnoxPlan(client.getPlan()));
         command.setOwnerEmail(client.getEmail());
         command.setOwnerPassword(PasswordGenerator.generate());
         command.setOwnerUsername(slug);
@@ -234,7 +239,38 @@ public class ClientService {
             installmentRepository.flush();
             createSetupInstallments(client);
         }
+        syncTenantSubscription(client);
         return get(id);
+    }
+
+    /**
+     * Re-applies {@link #syncTenantSubscription} to every client. Run once at
+     * startup so subscriptions that drifted before the sync existed are healed.
+     */
+    @Transactional
+    public void reconcileAllSubscriptions() {
+        TenantContext.clear();
+        clientRepository.findAllByOrderByIdAsc().forEach(this::syncTenantSubscription);
+    }
+
+    /**
+     * Mirrors the client-manager plan and trial flag onto the tenant's
+     * {@code knox.subscriptions} row — the record Galaxy's My Subscription page
+     * and plan limits actually read. Without this, edits made here never reach
+     * the tenant. past_due is left alone: that is a billing state, not a
+     * trial/active toggle.
+     */
+    private void syncTenantSubscription(Client client) {
+        tenantRepository.findByClientId(client.getId())
+                .flatMap(t -> subscriptionRepository.findByTenantIdAndStatusNot(t.getId(), SubscriptionStatus.cancelled))
+                .ifPresent(sub -> {
+                    sub.setPlan(BillingPlan.fromKnoxPlan(client.getPlan()));
+                    if (sub.getStatus() != SubscriptionStatus.past_due) {
+                        sub.setStatus(client.isOnTrial() ? SubscriptionStatus.trialing : SubscriptionStatus.active);
+                    }
+                    sub.setUpdatedAt(LocalDateTime.now());
+                    subscriptionRepository.save(sub);
+                });
     }
 
     @Transactional
