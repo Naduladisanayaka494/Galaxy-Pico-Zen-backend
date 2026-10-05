@@ -66,6 +66,13 @@ public class TenantUserAdminService {
     @Autowired
     private BusinessSettingsRepository businessSettingsRepository;
 
+    /**
+     * Enforces subscription plan caps. Injected here so that creating a user
+     * is gated by the tenant's plan-level user limit.
+     */
+    @Autowired
+    private PlanLimitService planLimitService;
+
     @Transactional(readOnly = true)
     public List<TenantUserResponse> list() {
         return userRepository.findAllByOrderByFirstNameAscLastNameAsc()
@@ -86,6 +93,11 @@ public class TenantUserAdminService {
         requireUsernameAvailable(req.getUsername(), null);
         requireEmailAvailable(req.getEmail(), null);
         validateCommission(req);
+
+        // Enforce the subscription plan's user-account cap before writing anything.
+        // userRepository.count() is the total accounts that already exist;
+        // requireUserSlot throws 403 when that count is >= the plan's maxUsers.
+        planLimitService.requireUserSlot(userRepository.count());
 
         User user = new User();
         applyProfile(user, req);

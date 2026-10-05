@@ -13,4 +13,6 @@ public interface SubscriptionPeriodRepository extends JpaRepository<Subscription
     List<SubscriptionPeriod> findByClientIdOrderByPeriodStartAsc(Long clientId);
     List<SubscriptionPeriod> findByClientIdIn(List<Long> clientIds);
     Optional<SubscriptionPeriod> findByClientIdAndPeriodStart(Long clientId, LocalDate periodStart);
+    /** The most recent billed period for a client; empty when no periods have been recorded. */
+    Optional<SubscriptionPeriod> findTopByClientIdOrderByPeriodStartDesc(Long clientId);
 }

@@ -49,17 +49,52 @@ public class SubscriptionService {
         Subscription subscription = findSubscription();
         GalaxyPlan plan = galaxyPlanRepository.findById(subscription.getPlan()).orElse(null);
 
+        // currentPeriodStart / currentPeriodEnd are set by KNOX staff edits;
+        // they are null for subscriptions created before those fields existed, or
+        // when KNOX hasn't entered them yet. Derive a sensible renewal date so
+        // the "Next renewal" card is never empty.
         LocalDate periodEnd = subscription.getCurrentPeriodEnd();
-        Integer daysUntilRenewal = periodEnd == null
-                ? null
-                : (int) ChronoUnit.DAYS.between(LocalDate.now(), periodEnd);
+        LocalDate periodStart = subscription.getCurrentPeriodStart();
+
+        if (periodEnd == null) {
+            // Prefer the most recent KNOX billing period (subscription_periods) —
+            // that IS the renewal cadence. Next renewal = the month after the
+            // last billed period start.
+            Long tenantId = TenantContext.requireTenantId();
+            Optional<Long> clientIdOpt = tenantRepository.findById(tenantId).map(Tenant::getClientId);
+            if (clientIdOpt.isPresent() && clientIdOpt.get() != null) {
+                Optional<SubscriptionPeriod> latest =
+                        subscriptionPeriodRepository.findTopByClientIdOrderByPeriodStartDesc(clientIdOpt.get());
+                if (latest.isPresent()) {
+                    // Monthly billing: next renewal is the 1st of the month after the latest billed period.
+                    periodStart = latest.get().getPeriodStart();
+                    periodEnd   = periodStart.plusMonths(1);
+                }
+            }
+
+            if (periodEnd == null) {
+                // No billing periods recorded yet — fall back to startedAt-based
+                // rolling window (always on the 1st of a month).
+                LocalDate base = subscription.getStartedAt().withDayOfMonth(1);
+                LocalDate now  = LocalDate.now();
+                // Walk forward in monthly steps until we find the period that
+                // contains today, then the end is the following month.
+                while (!base.plusMonths(1).isAfter(now)) {
+                    base = base.plusMonths(1);
+                }
+                periodStart = base;
+                periodEnd   = base.plusMonths(1);
+            }
+        }
+
+        Integer daysUntilRenewal = (int) ChronoUnit.DAYS.between(LocalDate.now(), periodEnd);
 
         return new SubscriptionResponse(
                 subscription.getPlan(),
                 subscription.getStatus(),
                 subscription.getStartedAt(),
                 subscription.getTrialEndsAt(),
-                subscription.getCurrentPeriodStart(),
+                periodStart,
                 periodEnd,
                 subscription.getOutstanding(),
                 daysUntilRenewal,
