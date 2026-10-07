@@ -398,12 +398,12 @@ public class ReportService {
     // ---------------------------------------------------------------- helpers
 
     private LocalDate startOrDefault(LocalDate from) {
-        return (from != null ? from : LocalDate.now().minusMonths(DEFAULT_WINDOW_MONTHS - 1L)).withDayOfMonth(1);
+        return from != null ? from : LocalDate.now().minusMonths(DEFAULT_WINDOW_MONTHS - 1L).withDayOfMonth(1);
     }
 
     /** Exclusive upper bound: the first day of the month after {@code to}. */
     private LocalDate endOrDefault(LocalDate to) {
-        return (to != null ? to : LocalDate.now()).withDayOfMonth(1).plusMonths(1);
+        return to != null ? to.plusDays(1) : LocalDate.now().withDayOfMonth(1).plusMonths(1);
     }
 
     private Object[] firstRow(List<Object[]> rows) {
